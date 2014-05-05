@@ -1,0 +1,10 @@
+blib/
+_build/
+Build
+Makefile.PL
+MYMETA.yml
+META.yml
+*.bak
+*.tar.gz
+*.tar.bz2
+.*.swp
