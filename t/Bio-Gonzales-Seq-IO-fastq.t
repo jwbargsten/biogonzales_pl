@@ -6,9 +6,6 @@ use Bio::Gonzales::Util::Cerial;
 
 
 BEGIN {
-  eval "use Bio::Perl";
-  plan skip_all => "bioperl equired for testing" if $@;
-
   eval "use Bio::SeqIO::fastq";
 
   use_ok('Bio::Gonzales::Seq::IO::fastq');
