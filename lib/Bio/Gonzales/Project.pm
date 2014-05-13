@@ -115,7 +115,7 @@ sub BUILD {
     mkdir $av unless ( -d $av );
   }
 
-  $self->log->info("invoked")    # if a script is run, log it
+  $self->log->info("invoked ($av)")    # if a script is run, log it
     if ( !$ENV{GONZLOG_SILENT} );
 }
 
