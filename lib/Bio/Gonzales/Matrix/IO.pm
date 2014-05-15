@@ -4,7 +4,6 @@ use warnings;
 use strict;
 use Carp;
 use Data::Dumper;
-use File::Slurp qw/slurp/;
 use List::MoreUtils qw/uniq/;
 use Bio::Gonzales::Util qw/flatten/;
 
