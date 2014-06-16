@@ -14,7 +14,7 @@ use base 'Exporter';
 our ( @EXPORT, @EXPORT_OK, %EXPORT_TAGS );
 # VERSION
 
-@EXPORT      = qw(catfile nfi $ANALYSIS_VERSION path_to analysis_path gonzlog gonzconf iof $GONZLOG);
+@EXPORT      = qw(catfile nfi $ANALYSIS_VERSION path_to analysis_path gonzlog gonzconf iof $GONZLOG gonzc);
 %EXPORT_TAGS = ();
 @EXPORT_OK   = qw();
 
@@ -28,6 +28,7 @@ sub gonzlog       { $bgp->log() }
 sub nfi           { $bgp->nfi(@_) }
 sub iof           { $bgp->conf(@_) }
 sub gonzconf      { $bgp->conf(@_) }
+sub gonzc         { $bgp->conf(@_) }
 sub analysis_path { $bgp->analysis_path(@_) }
 
 1;
