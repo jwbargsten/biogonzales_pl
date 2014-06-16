@@ -74,6 +74,7 @@ sub dict_slurp {
       $raw_row =~ s/\r\n/\n/;
       chomp $raw_row;
       @header = split /$c{sep}/, $raw_row;
+      @header = @header[@$vidx] if(defined $vidx);
       last;
     }
   }
@@ -241,7 +242,10 @@ sub miterate {
 sub lspew {
   my ( $dest, $l, $c ) = @_;
   my $delim = $c->{sep} // $c->{delim} // "\t";
+  my $header   = $c->{header}    // $c->{ids};
   my ( $fh, $fh_was_open ) = open_on_demand( $dest, '>' );
+
+  say $fh join $delim, @$header if($header && @$header > 0);
 
   if ( ref $l eq 'HASH' ) {
     while ( my ( $k, $v ) = each %$l ) {
