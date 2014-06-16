@@ -94,7 +94,8 @@ sub dict_slurp {
 
     for my $kidx (@kidcs) {
 
-      my @k = ( ref $kidx ? map { $_ // '' } @r[@$kidx] : $r[$kidx] );
+      my @k = ( ref $kidx ?  @r[@$kidx] : $r[$kidx] );
+      @k = map { $_ // '' } @k;
       @k = sort @k if ( $c{sort_keys} );
       my $k = join( $;, @k ) // '';
 
