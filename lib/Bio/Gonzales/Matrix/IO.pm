@@ -9,6 +9,7 @@ use Bio::Gonzales::Util qw/flatten/;
 
 use Bio::Gonzales::Matrix::Util qw/uniq_rows/;
 
+
 use 5.010;
 
 use List::Util qw/max/;
@@ -21,6 +22,7 @@ our ( @EXPORT, @EXPORT_OK, %EXPORT_TAGS );
 @EXPORT      = qw(mslurp mspew lslurp miterate lspew dict_slurp dict_spew);
 %EXPORT_TAGS = ();
 @EXPORT_OK   = qw(lspew xlsx_slurp xlsx_spew);
+my $COMMENT_RE = qr/^\s*#/;
 
 sub dict_slurp {
   my ( $src, $cc ) = @_;
@@ -32,7 +34,7 @@ sub dict_slurp {
     sep              => qr/\t/,
     header           => undef,
     skip             => -1,
-    comment          => qr/^#/,
+    comment          => $COMMENT_RE,
     key_idx          => 0,
     record_filter    => undef,
     commented_header => undef,
@@ -146,7 +148,7 @@ sub mslurp {
     header           => 0,
     skip             => -1,
     row_names        => 0,
-    comment          => qr/^#/,
+    comment          => $COMMENT_RE,
     commented_header => undef,
     record_filter    => undef,
     col_idx => undef,
@@ -213,7 +215,7 @@ sub miterate {
   my %c = (
     sep           => qr/\t/,
     skip          => 0,
-    comment       => qr/^#/,
+    comment          => $COMMENT_RE,
     record_filter => undef,
     %$cc
   );
@@ -455,7 +457,7 @@ Provides functions for common matrix/list IO.
     sep     => qr/\t/,
     header  => 0,
     skip    => -1,
-    comment => qr/^#/,
+    comment => qr/^\s*#/,
     key_idx => 0,
     val_idx => undef,
     uniq    => 0,
@@ -548,7 +550,7 @@ Further options with defaults:
         header => 0, # parse header
         skip => 0, # skip the first N lines (without header)
         row_names => 0, # parse row names
-        comment => qr/^#/ # the comment character
+        comment => qr/^\s*#/ # the comment character
         record_filter => undef # set a function to filter records
     );
     
