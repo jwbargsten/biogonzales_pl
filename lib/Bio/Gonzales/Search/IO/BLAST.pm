@@ -11,6 +11,7 @@ use Bio::Gonzales::Util::File qw/basename regex_glob is_archive/;
 use List::Util qw/min max/;
 use File::Temp qw/tempdir tempfile/;
 use Bio::Gonzales::Seq::IO qw(faiterate faspew);
+use Capture::Tiny qw/capture_merged/;
 
 use Params::Validate qw/validate/;
 our ( @EXPORT, @EXPORT_OK, %EXPORT_TAGS );
@@ -80,9 +81,11 @@ sub makeblastdb {
 
   say STDERR "Creating blast db:";
   say STDERR join " ", @cmd;
-  local *STDERR;
-  local *STDOUT;
-  system @cmd;
+
+  my $merged = capture_merged { system @cmd };
+
+  say STDERR $merged;
+
 
   unlink $seqf if ($unlink);
   return $db_name;

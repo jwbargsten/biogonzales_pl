@@ -47,6 +47,8 @@ for my $file (@files) {
     my $seqin;
     if ( $file && -f $file ) {
         say STDERR "Using file $file";
+        #special case to speed things up
+        system(qw/grep -c ^>/,$file) ==0 and next if($count);
     } elsif ( ref $file ) {
         say STDERR "Using STDIN";
     } else {
