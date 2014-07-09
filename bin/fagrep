@@ -11,11 +11,12 @@ use Pod::Usage;
 use List::MoreUtils qw/any/;
 use Bio::Gonzales::Util::Text qw/ccount/;
 use Bio::Gonzales::Seq::IO qw/faiterate faspew/;
+use Bio::Gonzales::Stat::Util qw/hist_text/;
 use Bio::Perl;
 my (
     $is_revcom_seq, $help,      $length,  @id,       $desc,        $seq,
     $only_id,       $only_head, $verbose, $only_len, $is_inverted, $count,
-    $only_char
+    $only_char, $print_hist
 );
 
 my $shift_id = 0;
@@ -27,6 +28,7 @@ GetOptions(
     "filter_desc=s"   => \$desc,
     "list_ids|i"      => \$only_id,
     "list_length|l"   => \$only_len,
+    "histogram|hi"   => \$print_hist,
     "list_char|c"     => \$only_char,
     "help|h|?"        => \$help,
     "shift_id=i"      => \$shift_id,
@@ -45,6 +47,7 @@ push @files, \*STDIN
 
 for my $file (@files) {
     my $seqin;
+    my @lengths;
     if ( $file && -f $file ) {
         say STDERR "Using file $file";
         #special case to speed things up
@@ -60,9 +63,7 @@ for my $file (@files) {
     my $seqout = \*STDOUT;
 
     if ( $seq && $is_revcom_seq ) {
-        print STDERR $seq;
         $seq = reverse_complement_as_string($seq);
-        say STDERR " -> $seq";
     }
 
     @id = map {qr/$_/} @id;
@@ -77,7 +78,7 @@ for my $file (@files) {
                 || ( $desc && $so->desc =~ /$desc/ )
 
             )
-            || ( !( @id || $seq || $desc ) && ( $count || $only_id || $only_head || $only_len || $only_char ) )
+            || ( !( @id || $seq || $desc ) && ( $print_hist || $count || $only_id || $only_head || $only_len || $only_char ) )
             )
         {
             say STDERR $so->id . " matches."
@@ -105,13 +106,16 @@ for my $file (@files) {
                 say $so->id . ": " . join(", ", (map { $_ . " => " . $char_count->{$_} } sort keys %$char_count), "sum: " . $so->length);
             } elsif ($count) {
                 $number_of_seqs++;
+            } elsif($print_hist) {
+              push @lengths, $so->length;
             } else {
                 faspew( $seqout, $so );
             }
         }
     }
 
-    say STDERR $number_of_seqs if ($count);
+    say $number_of_seqs if ($count);
+    print hist_text(\@lengths, {skip_empty => 1}) if ($print_hist);
 }
 
 __END__
