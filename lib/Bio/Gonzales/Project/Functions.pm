@@ -14,15 +14,15 @@ use base 'Exporter';
 our ( @EXPORT, @EXPORT_OK, %EXPORT_TAGS );
 # VERSION
 
-@EXPORT      = qw(catfile nfi $ANALYSIS_VERSION path_to analysis_path gonzlog gonzconf iof $GONZLOG gonzc gonzl);
+@EXPORT      = qw(catfile nfi analysis_version path_to analysis_path gonzlog gonzconf iof $GONZLOG gonzc gonzl);
 %EXPORT_TAGS = ();
 @EXPORT_OK   = qw();
 
 my $bgp = Bio::Gonzales::Project->new();
 
-our $ANALYSIS_VERSION = $bgp->analysis_version;
 our $GONZLOG          = $bgp->log;
 
+sub analysis_version { $bgp->analysis_version(@_) }
 sub path_to       { $bgp->path_to(@_) }
 sub gonzlog       { $bgp->log() }
 sub gonzl         { $bgp->log() }
