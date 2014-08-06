@@ -128,11 +128,11 @@ sub _prepare_av {
   if ( !$av ) {
     return '.';
   } elsif ( $av =~ /^[-A-Za-z_.0-9]+$/ ) {
+    mkdir $av unless ( -d $av );
+  } else {
     carp "analysis version not or not correctly specified, variable contains: " . ( $av // 'nothing' );
     carp "using current dir as output dir";
     return '.';
-  } else {
-    mkdir $av unless ( -d $av );
   }
   return $av;
 }

@@ -198,7 +198,7 @@ sub mslurp {
   $fh->close unless ($fh_was_open);
 
   #remove first empty element of a header if same number of elements as first matrix element.
-  shift @header if ( $c{header} && @m > 0 && @{ $m[0] } == @header && !$header[0] );
+  shift @header if ( $c{row_names} && $c{header} && @m > 0 && @{ $m[0] } == @header && !$header[0] );
 
   if (wantarray) {
     return ( \@m, ( @header ? \@header : undef ), ( @row_names ? \@row_names : undef ) );

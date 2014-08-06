@@ -3,7 +3,7 @@ use warnings;
 use strict;
 use Carp;
 use Statistics::Descriptive;
-use Number::Format qw/format_number/;
+use Number::Format qw/format_number :vars/;
 use POSIX qw/ceil/;
 
 use 5.010;
@@ -16,11 +16,36 @@ our ( @EXPORT, @EXPORT_OK, %EXPORT_TAGS );
 %EXPORT_TAGS = ();
 @EXPORT_OK   = qw(hist_text);
 
+my $nfmt_full = new Number::Format(
+  -thousands_sep => ',',
+  -decimal_point => '.',
+  -decimal_fill  => 1
+);
+
+my $nfmt_nice = new Number::Format(
+  -thousands_sep => ',',
+  -decimal_point => '.',
+  -decimal_fill  => 0
+);
+
+sub log10 {
+  my $n = shift;
+  return log($n) / log(10);
+}
+
 sub hist_text {
   my $v    = shift;
   my $c    = shift;
   my $stat = Statistics::Descriptive::Full->new();
-  $stat->add_data(@$v);
+
+  my $nf_nice = gen_number_formatter( $nfmt_nice, $c );
+  my $nf_full = gen_number_formatter( $nfmt_full, $c );
+
+  if ( $c->{log10} ) {
+    $stat->add_data( map { log10($_) } @$v );
+  } else {
+    $stat->add_data(@$v);
+  }
   my $nclass = $c->{breaks} || nclass_sturges($stat);
 
   my $fd = $stat->frequency_distribution_ref( $nclass + 1 );
@@ -39,19 +64,38 @@ sub hist_text {
     my $kcnt = $fd->{$curr};
     next if ( $kcnt == 0 && $c->{skip_empty} );
     my $len = sprintf( "%.0f", ( $kcnt * $max_len / $count ) );
-    push @res, [ sprintf( "%.2f", $curr ), "$kcnt", "#" x $len ];
+    push @res, [ $nf_full->($curr), "$kcnt", "#" x $len ];
     $longest_interval = length( $res[-1][0] ) if ( length( $res[-1][0] ) > $longest_interval );
     $longest_cnt      = length( $res[-1][1] ) if ( length( $res[-1][1] ) > $longest_cnt );
   }
 
   my $res;
-  $res .= "median: " . format_number( $stat->median ) . "\n";
-  $res .= "count: " . format_number( $stat->count ) . "\n";
+  $res .= "median: " . $nf_nice->( $stat->median, 2, 0 ) . "\n";
+  $res .= "count: " . $nfmt_nice->format_number( $stat->count, 0, 0 ) . "\n";
+  $res .= "5num: "
+    . join( "  ",
+    $nf_nice->( $stat->quantile(0) ),
+    $nf_nice->( $stat->quantile(1) ),
+    '>' . $nf_nice->( $stat->quantile(2) ) . '<',
+    $nf_nice->( $stat->quantile(3) ),
+    $nf_nice->( $stat->quantile(4) ),
+    ) . "\n";
   $res .= "\n";
   for my $r (@res) {
     $res .= sprintf( "<= %${longest_interval}s (%${longest_cnt}s)  %s\n", @$r );
   }
   return $res;
+}
+
+sub gen_number_formatter {
+  my $nf = shift;
+  my $c  = shift;
+  return sub {
+    my ($value, @rest) = @_;
+
+    $value = 10**$value if ( $c->{log10} );
+    return $nf->format_number($value, @rest);
+  };
 }
 
 sub nclass_fd {
@@ -63,5 +107,5 @@ sub nclass_fd {
 
 sub nclass_sturges {
   my ($stat) = @_;
-  return ceil(log($stat->count)/log(2) + 1);
+  return ceil( log( $stat->count ) / log(2) + 1 );
 }
