@@ -82,6 +82,8 @@ sub Parse_entry {
     attributes => { 'Name' => [$name] }
   );
   my $sequence;
+  my %description = (main => []);
+  my $description_level = 'main';
 
   my @seq;
   for my $e (@$lines) {
@@ -111,6 +113,17 @@ sub Parse_entry {
       $mfeat->add_attr( 'accession_number' => [ split /;\s+/, $val ] );
     } elsif ( $key eq 'DT' ) {
     } elsif ( $key eq 'DE' ) {
+      if($val =~ /^(\w+):\s*$/) {
+        $description_level = lc($1);
+        next;
+      }
+      if($val =~ s/^Flags:\s*//) {
+        push @{$description{main}}, [ 'flags', undef,  split( /;\s*/, $val )];
+        next;
+      }
+      die $val unless($val =~ /^(?:(\w+):)?\s*(\w+)=\s*(.*)$/);
+      my $cat = $1 // $description{$description_level}[-1][0];
+      push @{$description{$description_level}}, [ lc($cat), lc($2), $3 ];
     } elsif ( $key eq 'GN' ) {
       next if ( $val eq 'and' );
       for my $a ( split /;\s+/, $val ) {
@@ -198,6 +211,7 @@ sub Parse_entry {
     }
   }
 
+  $mfeat->add_attr(description => _merge_descriptions(\%description));
   $mfeat->add_attr( ID => $mfeat->attr_first('accession_number') );
 
   die "no sequence object found in " . $mfeat->id . Dumper($mfeat)
@@ -207,6 +221,26 @@ sub Parse_entry {
   $mfeat->attr->{seq}[0]{data} = $sequence;
 
   return $mfeat;
+}
+
+sub _merge_descriptions {
+  my $desc = shift;
+  my %desc_new;
+  while(my ($lvl, $data) = each %$desc) {
+  for my $d (@$data) {
+    my $cat = shift @$d;
+    my $scat = shift @$d;
+
+    $cat .= "_" . $scat if($scat);
+
+    $desc_new{$lvl}{$cat} //= [];
+
+    push @{$desc_new{$lvl}{$cat}}, @$d;
+  }
+
+  }
+  return { %{delete $desc_new{main}}, %desc_new };
+
 }
 
 __PACKAGE__->meta->make_immutable();
