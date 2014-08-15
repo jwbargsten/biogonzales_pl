@@ -5,6 +5,7 @@ use Carp;
 use Statistics::Descriptive;
 use Number::Format qw/format_number :vars/;
 use POSIX qw/ceil/;
+use List::Util qw/sum/;
 
 use 5.010;
 
@@ -14,7 +15,7 @@ our ( @EXPORT, @EXPORT_OK, %EXPORT_TAGS );
 
 @EXPORT      = qw();
 %EXPORT_TAGS = ();
-@EXPORT_OK   = qw(hist_text);
+@EXPORT_OK   = qw(hist_text nstat);
 
 my $nfmt_full = new Number::Format(
   -thousands_sep => ',',
@@ -91,10 +92,10 @@ sub gen_number_formatter {
   my $nf = shift;
   my $c  = shift;
   return sub {
-    my ($value, @rest) = @_;
+    my ( $value, @rest ) = @_;
 
     $value = 10**$value if ( $c->{log10} );
-    return $nf->format_number($value, @rest);
+    return $nf->format_number( $value, @rest );
   };
 }
 
@@ -108,4 +109,26 @@ sub nclass_fd {
 sub nclass_sturges {
   my ($stat) = @_;
   return ceil( log( $stat->count ) / log(2) + 1 );
+}
+
+sub nstat {
+  my $frac     = shift;
+  my $values   = shift;
+  my $min_size = shift;
+
+  my $total;
+  if ($min_size) {
+    $total = sum grep { $_ >= $min_size } @$values;
+  } else {
+    $total = sum @$values;
+  }
+
+  my $sum = 0;
+  for ( sort { $b <=> $a } @$values ) {
+    $sum += $_;
+    if ( $sum >= $total * $frac ) {
+      return wantarray ? ( $_, $total ) : $_;
+    }
+  }
+  return;
 }
