@@ -248,7 +248,7 @@ sub lspew {
   my $header   = $c->{header}    // $c->{ids};
   my ( $fh, $fh_was_open ) = open_on_demand( $dest, '>' );
 
-  say $fh join $delim, @$header if($header && @$header > 0);
+  say $fh join($delim, @$header) if($header && @$header > 0);
 
   if ( ref $l eq 'HASH' ) {
     while ( my ( $k, $v ) = each %$l ) {
