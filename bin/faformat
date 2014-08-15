@@ -7,8 +7,6 @@ use strict;
 use 5.010;
 use Carp;
 
-use Bio::SeqIO;
-use Bio::Root::IO;
 use Bio::Gonzales::Seq::IO qw/faiterate/;
 use Bio::Gonzales::Seq::Filter qw/clean_pep_seq clean_dna_seq clean_rna_seq/;
 

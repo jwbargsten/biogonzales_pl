@@ -12,7 +12,6 @@ use List::MoreUtils qw/any/;
 use Bio::Gonzales::Util::Text qw/ccount/;
 use Bio::Gonzales::Seq::IO qw/faiterate faspew/;
 use Bio::Gonzales::Stat::Util qw/hist_text/;
-use Bio::Perl;
 my (
   $is_revcom_seq, $help,    $length,   @id,          $desc,  $seq,       $only_id,
   $only_head,     $verbose, $only_len, $is_inverted, $count, $only_char, $print_hist
@@ -44,11 +43,16 @@ my @files = @ARGV;
 push @files, \*STDIN
   unless (@files);
 
+if ( $seq && $is_revcom_seq ) {
+  $seq = Bio::Gonzales::Seq->new( seq => $seq, id => '1' )->revcom->seq;
+}
+
 for my $file (@files) {
   my $seqin;
   my @lengths;
   if ( $file && -f $file ) {
     say STDERR "Using file $file";
+
     #special case to speed things up
     system( qw/grep -c ^>/, $file ) == 0 and next if ($count);
   } elsif ( ref $file ) {
@@ -60,10 +64,6 @@ for my $file (@files) {
   $seqin = faiterate($file);
 
   my $seqout = \*STDOUT;
-
-  if ( $seq && $is_revcom_seq ) {
-    $seq = reverse_complement_as_string($seq);
-  }
 
   @id = map {qr/$_/} @id;
 
@@ -77,8 +77,15 @@ for my $file (@files) {
         || ( $desc && $so->desc =~ /$desc/ )
 
       )
-      || (!( @id || $seq || $desc )
-        && ( $print_hist || $count || $only_id || $only_head || $only_len || $only_char ) )
+      || (
+        !( @id || $seq || $desc )
+        && ( $print_hist
+          || $count
+          || $only_id
+          || $only_head
+          || $only_len
+          || $only_char )
+      )
       )
     {
       say STDERR $so->id . " matches."
@@ -104,9 +111,14 @@ for my $file (@files) {
       } elsif ($only_char) {
         my $char_count = ccount( $so->seq );
         say $so->id . ": "
-          . join( ", ",
-          ( map { $_ . " => " . $char_count->{$_} } sort keys %$char_count ),
-          "sum: " . $so->length );
+          . join(
+          ", ",
+          (
+            map { $_ . " => " . $char_count->{$_} }
+            sort keys %$char_count
+          ),
+          "sum: " . $so->length
+          );
       } elsif ($count) {
         $number_of_seqs++;
       } elsif ($print_hist) {
