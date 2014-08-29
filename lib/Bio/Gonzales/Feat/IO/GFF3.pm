@@ -164,7 +164,7 @@ sub next_feat {
       push @{ $self->segments }, { id => $seqid, start => $start, end => $end };
     } elsif ( $l =~ /^\#\#\#/ ) {
       next;
-    } elsif ( $l =~ /^\#/ || /^\s*$/ || m{^//} ) {
+    } elsif ( $l =~ /^\#/ || $l=~ /^\s*$/ || $l =~ m{^//} ) {
       next;
     } elsif ( $l =~ /$FASTA_RE/ ) {
       $self->_parse_seq($l);
