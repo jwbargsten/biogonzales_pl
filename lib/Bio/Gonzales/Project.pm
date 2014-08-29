@@ -29,14 +29,16 @@ has 'config_file'      => ( is => 'rw', default    => 'gonz.conf.yml' );
 sub _build_analysis_version {
   my ($self) = @_;
 
+  my $av;
   if ( $ENV{ANALYSIS_VERSION} ) {
-    return $ENV{ANALYSIS_VERSION};
+    $av = $ENV{ANALYSIS_VERSION};
   } elsif ( -f 'av' ) {
-    return ( slurpc('av') )[0];
+    $av = ( slurpc('av') )[0];
   } else {
     carp "using current dir as output dir";
-    return '.';
+    $av = '.';
   }
+  return _prepare_av($av);
 }
 
 sub _build__substitute_conf {
@@ -87,7 +89,6 @@ sub _build_config {
     $self->_substitute_conf->visit($conf);
   }
 
-
   my $av_conf_f = join( ".", $self->analysis_version, "conf", "yml" );
   if ( $self->merge_av_config && $av_conf_f !~ /^\./ && -f $av_conf_f ) {
 
@@ -107,16 +108,33 @@ sub BUILD {
   my ($self) = @_;
 
   my $av = $self->analysis_version;
-  unless ( $av && $av =~ /^[-A-Za-z_.0-9]+$/ ) {
-    carp "analysis version not or not correctly specified, variable contains: " . ( $av // 'nothing' );
-    carp "using current dir as output dir";
-    $self->analysis_version('.');
-  } else {
-    mkdir $av unless ( -d $av );
-  }
 
   $self->log->info("invoked ($av)")    # if a script is run, log it
     if ( !$ENV{GONZLOG_SILENT} );
+}
+
+around 'analysis_version' => sub {
+  my $orig = shift;
+  my $self = shift;
+
+  return $self->$orig()
+    unless @_;
+
+  return $self->$orig( _prepare_av(shift) );
+};
+
+sub _prepare_av {
+  my $av = shift;
+  if ( !$av ) {
+    return '.';
+  } elsif ( $av =~ /^[-A-Za-z_.0-9]+$/ ) {
+    mkdir $av unless ( -d $av );
+  } else {
+    carp "analysis version not or not correctly specified, variable contains: " . ( $av // 'nothing' );
+    carp "using current dir as output dir";
+    return '.';
+  }
+  return $av;
 }
 
 sub av { shift->analysis_version(@_) }
