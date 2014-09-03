@@ -19,7 +19,9 @@ use 5.010;
 
 # VERSION
 
-has 'analysis_version' => ( is => 'rw', builder    => '_build_analysis_version' );
+has '_config_key_cache' => ( is => 'rw', default => sub { {} } );
+has '_nfi_cache'        => ( is => 'rw', default => sub { {} } );
+has 'analysis_version'  => ( is => 'rw', builder => '_build_analysis_version' );
 has '_substitute_conf' => ( is => 'rw', lazy_build => 1 );
 has 'config'           => ( is => 'rw', lazy_build => 1 );
 has 'merge_av_config'  => ( is => 'rw', default    => 1 );
@@ -145,7 +147,11 @@ sub nfi {
   my $self = shift;
 
   my $f = $self->_nfi(@_);
-  $self->log->info("(nfi) > $f <");
+
+  # only log it once per filename
+  $self->log->info("(nfi) > $f <")
+    unless ( $self->_nfi_cache->{$f}++ );
+
   return $f;
 }
 
@@ -179,10 +185,13 @@ sub conf {
     }
   }
   if (@keys) {
-    $self->log->info( "(gonzconf) > " . join( " ", @keys ) . " <", p($data) );
+    my $k = join( " ", @keys );
+    $self->log->info( "(gonzconf) > " . $k . " <", p($data) )
+      unless ( $self->_config_key_cache->{ '_' . $k }++ );
 
   } else {
-    $self->log->info( "(gonzconf) dump", p($data) );
+    $self->log->info( "(gonzconf) dump", p($data) )
+      unless ( $self->_config_key_cache->{'_'}++ );
   }
   return $data;
 }
