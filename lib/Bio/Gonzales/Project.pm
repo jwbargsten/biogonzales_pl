@@ -12,7 +12,13 @@ use Bio::Gonzales::Util::Cerial;
 use Bio::Gonzales::Util::Development::File;
 use Data::Visitor::Callback;
 use Bio::Gonzales::Util::Log;
-use Data::Printer;
+use Data::Printer {
+  indent         => 2,
+  colored        => '0',
+  use_prototypes => 0,
+  rc_file        => '',
+};
+
 use POSIX;
 
 use 5.010;
