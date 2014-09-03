@@ -109,7 +109,7 @@ sub BUILD {
 
   my $av = $self->analysis_version;
 
-  $self->log->info("invoked")    # if a script is run, log it
+  $self->log->info("invoked ($av)")    # if a script is run, log it
     if ( !$ENV{GONZLOG_SILENT} );
 }
 
