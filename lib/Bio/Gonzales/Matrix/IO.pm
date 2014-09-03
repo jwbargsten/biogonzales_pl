@@ -76,7 +76,7 @@ sub dict_slurp {
       $raw_row =~ s/\r\n/\n/;
       chomp $raw_row;
       @header = split /$c{sep}/, $raw_row;
-      @header = @header[@$vidx] if(defined $vidx);
+      @header = ref $vidx ? @header[@$vidx]: ($header[$vidx]) if(defined $vidx && $vidx ne 'all');
       last;
     }
   }
@@ -106,10 +106,10 @@ sub dict_slurp {
       } elsif ( not defined $vidx ) {
         $map{$k}++;
       } elsif ($uniq) {
-        $map{$k} = ( ref $vidx ? [ @r[@$vidx] ] : $r[$vidx] );
+        $map{$k} = ( ref $vidx ? [ @r[@$vidx] ] : ($vidx eq 'all' ? \@r : $r[$vidx] ));
       } else {
         $map{$k} //= [];
-        push @{ $map{$k} }, ( ref $vidx ? [ @r[@$vidx] ] : $r[$vidx] );
+        push @{ $map{$k} }, ( ref $vidx ? [ @r[@$vidx] ] : ($vidx eq 'all' ? \@r : $r[$vidx] ));
       }
     }
   }
