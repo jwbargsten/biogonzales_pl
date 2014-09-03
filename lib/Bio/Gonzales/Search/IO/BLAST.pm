@@ -35,12 +35,13 @@ sub makeblastdb {
     }
   );
 
+  $c{wd} //= './';
   my $unlink;
   my $seqf = $c{seq_file};
   if ( is_archive($seqf) ) {
     say STDERR "$seqf is an archive, extracting first ...";
     my $fait = faiterate($seqf);
-    my ( $fh, $fn ) = tempfile();
+    my ( $fh, $fn ) = tempfile('tempXXXXX', DIR => $c{wd} );
     while ( my $s = $fait->() ) {
       faspew( $fh, $s );
     }
@@ -60,7 +61,6 @@ sub makeblastdb {
   if    ( $c{alphabet} =~ /^(?:a|p)/ )   { push @cmd, '-dbtype', 'prot' }
   elsif ( $c{alphabet} =~ /^(?:n|d|r)/ ) { push @cmd, '-dbtype', 'nucl' }
 
-  $c{wd} //= './';
   $c{db_prefix} //= $basename;
   $c{db_prefix} .= '.bdb';
   my $db_name = File::Spec->catfile( $c{wd}, $c{db_prefix} );
