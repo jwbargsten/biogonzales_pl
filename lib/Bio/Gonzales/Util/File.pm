@@ -22,7 +22,7 @@ our %ZMODES = (
 use base 'Exporter';
 our ( @EXPORT, @EXPORT_OK, %EXPORT_TAGS );
 # VERSION
-our $EXTERNAL_GZ = which('pigz') // which('gzip');
+our $EXTERNAL_GZ = which('gzip'); #which('pigz') // which('gzip');
 our $EXTERNAL_BZIP2 = which('bzip2');
 
 @EXPORT      = qw(glob_regex epath bname openod spath);
@@ -152,7 +152,7 @@ sub _pipe_z {
     my ( $r, $w );
     pipe( $r, $w ) || die "gz pipe failed: $!";
     my $pid = fork();
-    $SIG{PIPE} = sub { die "whoops, gz pipe broke" };
+    #$SIG{PIPE} = sub { die "whoops, gz pipe broke" };
     defined($pid) || die "gz fork failed: $!";
     if ($pid) {
       $r->close;
