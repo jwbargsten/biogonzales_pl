@@ -8,6 +8,7 @@ use List::MoreUtils qw/zip/;
 use Data::Dumper;
 use Storable qw(dclone);
 use Scalar::Util qw/refaddr/;
+use Bio::Gonzales::Seq::Util qw/strand_convert/;
 
 our $QUIET_MODE;
 
@@ -19,24 +20,13 @@ has [qw/seq_id start end strand/] => ( is => 'rw', required => 1 );
 
 has [qw/phase score /] => ( is => 'rw' );
 
-
 sub scf_id { return shift->seq_id(@_); }
 
 sub length { return $_[0]->end - $_[0]->start + 1 }
 
 sub begin { return shift->start(@_) }
 
-our %STRAND_CHAR_TABLE = (
-  '+' => 1,
-  '-' => -1,
-  '.' => 0,
-  -1  => '-',
-  1   => '+',
-  0   => '.',
-);
-
-sub Convert_strand { return $STRAND_CHAR_TABLE{ $_[-1] } }
-
+sub Convert_strand { strand_convert(@_) }
 
 sub sort_subfeats {
   my ($self) = @_;
