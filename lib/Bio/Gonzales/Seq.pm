@@ -120,13 +120,17 @@ sub ungapped_length {
 
 sub sequence { shift->seq(@_) }
 
-sub all {
+sub stringify {
   my ($self) = @_;
 
   return ">" . $self->id . ( $self->desc ? $self->delim . $self->desc : "" ) . "\n" . $self->seq . "\n";
 }
 
-sub all_formatted {
+sub all { shift->stringify(@_) }
+
+sub all_formatted { shift->stringify_pretty(@_) }
+
+sub stringify_pretty {
   my ($self) = @_;
 
   return
@@ -136,9 +140,9 @@ sub all_formatted {
     . Bio::Gonzales::Seq::IO::format_seq_string( $self->seq );
 }
 
-sub all_pretty { shift->all_formatted(@_) }
+sub all_pretty { shift->stringify_pretty(@_) }
 
-sub pretty { shift->all_formatted(@_) }
+sub pretty { shift->stringify_pretty(@_) }
 
 sub as_primaryseq {
   my ($self) = @_;
@@ -198,7 +202,7 @@ sub subseq {
   my ( $self, $range, $c ) = @_;
 
   $range = [ $range->start, $range->end, $range->strand ]
-    if ( blessed($range) && $range->isa('Bio::Gonzales::MiniFeat') );
+    if ( blessed($range) && $range->isa('Bio::Gonzales::Feat') );
   my ( $seq, $corrected_range ) = $self->subseq_as_string( $range, $c );
   my ( $b, $e, $strand, @rest ) = @$corrected_range;
 

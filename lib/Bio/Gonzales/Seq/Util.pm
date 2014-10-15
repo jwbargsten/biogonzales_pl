@@ -35,7 +35,7 @@ our %STRAND_CHAR_TABLE = (
 );
 
 sub strand_convert {
-  if ( exists( $STRAND_CHAR_TABLE{ $_[-1] } ) ) {
+  if ( @_ && @_ > 0 && $_[-1] && exists( $STRAND_CHAR_TABLE{ $_[-1] } ) ) {
     return $STRAND_CHAR_TABLE{ $_[-1] };
   } else {
     return '.';

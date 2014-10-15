@@ -28,6 +28,17 @@ sub begin { return shift->start(@_) }
 
 sub Convert_strand { strand_convert(@_) }
 
+sub switch_coords {
+  my $self = shift;
+
+  my ($b, $e) = ($self->start, $self->end);
+  $self->start($e);
+  $self->end($b);
+
+  return $self;
+}
+
+
 sub sort_subfeats {
   my ($self) = @_;
 
