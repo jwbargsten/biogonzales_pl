@@ -22,7 +22,25 @@ our ( @EXPORT, @EXPORT_OK, %EXPORT_TAGS );
   map_seqids
   seqid_mapper
   crc64
+  strand_convert
 );
+
+our %STRAND_CHAR_TABLE = (
+  '+' => 1,
+  '-' => -1,
+  '.' => 0,
+  -1  => '-',
+  1   => '+',
+  0   => '.',
+);
+
+sub strand_convert {
+  if ( @_ && @_ > 0 && $_[-1] && exists( $STRAND_CHAR_TABLE{ $_[-1] } ) ) {
+    return $STRAND_CHAR_TABLE{ $_[-1] };
+  } else {
+    return '.';
+  }
+}
 
 sub pairwise_identity_l {
   my ( $seq1, $seq2 ) = @_;

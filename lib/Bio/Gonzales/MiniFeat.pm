@@ -81,6 +81,8 @@ sub parent_ids { return shift->_attr_list('Parent', @_); }
 
 sub parent_id { return shift->_attr_single( { name => 'Parent' } ); }
 
+sub attr_replace { return shift->replace_attr(@_) }
+
 sub replace_attr {
   my ( $self, $name, @values ) = @_;
 
