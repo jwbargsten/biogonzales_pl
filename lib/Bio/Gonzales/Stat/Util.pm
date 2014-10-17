@@ -124,10 +124,12 @@ sub nstat {
   }
 
   my $sum = 0;
+  my $n = 0;
   for ( sort { $b <=> $a } @$values ) {
     $sum += $_;
+    $n++;
     if ( $sum >= $total * $frac ) {
-      return wantarray ? ( $_, $total ) : $_;
+      return wantarray ? ( $_, $n, $total ) : $_;
     }
   }
   return;
