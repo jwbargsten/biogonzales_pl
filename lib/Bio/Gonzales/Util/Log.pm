@@ -48,10 +48,13 @@ sub format {
   my ( $self, $level, @lines ) = @_;
 
 
-  my $txt = '[' . strftime("%Y-%m-%d %H:%M:%S", localtime) . "] [" . uc($level) . "]";
-  $txt .= " " . $self->namespace . ":" if ( $self->namespace );
-  $txt .= ' [t' . threads->tid() .']' if($is_thread);
-  $txt .= " " . join( "\n", @lines, '' );
+  my $txt = strftime("%d %b %H:%M:%S", localtime)  . " [" . uc($level) . "]";
+  $txt .= " " . $self->namespace if ( $self->namespace );
+  $txt .= ' (t' . threads->tid()  . ')' if($is_thread);
+  $txt .= ": ";
+  
+  $txt .= join( ("\n" . (" "x length($txt))), @lines );
+  $txt .= "\n";
   return $txt;
 }
 
