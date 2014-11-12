@@ -109,7 +109,7 @@ sub open_on_demand {
   my $fh;
   my $fh_was_open;
 
-  if ( $src && $src eq '-' ) {
+  if ( $src && !ref($src) && $src eq '-' ) {
     if ( $mode eq '<' ) {
       $src = \*STDIN;
     } elsif ( $mode eq '>' ) {
