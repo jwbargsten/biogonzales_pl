@@ -18,20 +18,24 @@ use 5.010;
 my $LEVEL = { debug => 1, info => 2, warn => 3, error => 4, fatal => 5 };
 my $is_thread = eval '$threads::threads';
 
-has path  => ( is => 'rw' );
-has level => ( is => 'rw', default => sub {'debug'} );
-has namespace => (is => 'rw');
-has _fh   => ( is => 'lazy' );
-has tee_stderr => (is => 'rw');
+has path       => ( is => 'rw' );
+has level      => ( is => 'rw', default => sub {'debug'} );
+has namespace  => ( is => 'rw' );
+has _fh        => ( is => 'lazy' );
+has tee_stderr => ( is => 'rw' );
+
+has append => ( is => 'rw', default => 1 );
 
 sub _build__fh {
   my $self = shift;
 
   # File
   if ( my $path = $self->path ) {
+    my $mode = $self->append ? '>>' : '>';
+
     croak qq{Can't open log file "$path": $!}
-      unless open my $file, '>>', $path;
-    return $file;
+      unless open( my $fh, $mode, $path );
+    return $fh;
   }
 
   # STDERR
@@ -47,13 +51,14 @@ sub fatal { shift->log( fatal => @_ ) }
 sub format {
   my ( $self, $level, @lines ) = @_;
 
+  @lines = map { split /\n/, $_ } @lines;
 
-  my $txt = strftime("%d %b %H:%M:%S", localtime)  . " [" . uc($level) . "]";
-  $txt .= " " . $self->namespace if ( $self->namespace );
-  $txt .= ' (t' . threads->tid()  . ')' if($is_thread);
+  my $txt = strftime( "%d %b %H:%M:%S", localtime ) . " [" . uc($level) . "]";
+  $txt .= " " . $self->namespace       if ( $self->namespace );
+  $txt .= ' (t' . threads->tid() . ')' if ($is_thread);
   $txt .= ": ";
-  
-  $txt .= join( ("\n" . (" "x length($txt))), @lines );
+
+  $txt .= join( ( "\n" . ( " " x length($txt) ) ), @lines );
   $txt .= "\n";
   return $txt;
 }
@@ -76,14 +81,14 @@ sub log {
 
   return unless $self->is_level($level) && ( my $handle = $self->_fh );
 
-  my $msg =  $self->format( $level, @_ ) ;
+  my $msg = $self->format( $level, @_ );
 
-  _print($handle, $msg);
-  _print(\*STDERR, $msg) if($self->tee_stderr);
+  _print( $handle, $msg );
+  _print( \*STDERR, $msg ) if ( $self->tee_stderr );
 }
 
 sub _print {
-  my ($handle, $msg) = (shift, shift);
+  my ( $handle, $msg ) = ( shift, shift );
 
   flock $handle, LOCK_EX;
   $handle->print($msg) or croak "Can't write to log: $!";
