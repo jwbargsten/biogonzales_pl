@@ -53,7 +53,7 @@ sub format {
 
   @lines = map { split /\n/, $_ } @lines;
 
-  my $txt = strftime( "%d %b %H:%M:%S", localtime ) . " [" . uc($level) . "]";
+  my $txt = strftime( "[%d %b %H:%M:%S]", localtime ) . " [" . uc($level) . "]";
   $txt .= " " . $self->namespace       if ( $self->namespace );
   $txt .= ' (t' . threads->tid() . ')' if ($is_thread);
   $txt .= ": ";
