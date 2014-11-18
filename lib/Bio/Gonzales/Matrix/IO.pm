@@ -334,7 +334,7 @@ sub mspew {
     #add the values
     push @r, @{ $m->[$i] // [] } if ( $i < @$m );
     #fill the square if desired
-    if ($square) {
+    if ($square || $fill_rows) {
       my $missing = $num_cols - @r;
       push @r, (undef) x $missing;
     }
