@@ -9,7 +9,6 @@ use Bio::Gonzales::Util qw/flatten/;
 
 use Bio::Gonzales::Matrix::Util qw/uniq_rows/;
 
-
 use 5.010;
 
 use List::Util qw/max/;
@@ -39,7 +38,7 @@ sub dict_slurp {
     record_filter    => undef,
     commented_header => undef,
     concat_keys      => 1,
-    sort_keys      => 0,
+    sort_keys        => 0,
     %$cc
   );
 
@@ -76,7 +75,7 @@ sub dict_slurp {
       $raw_row =~ s/\r\n/\n/;
       chomp $raw_row;
       @header = split /$c{sep}/, $raw_row;
-      @header = ref $vidx ? @header[@$vidx]: ($header[$vidx]) if(defined $vidx && $vidx ne 'all');
+      @header = ref $vidx ? @header[@$vidx] : ( $header[$vidx] ) if ( defined $vidx && $vidx ne 'all' );
       last;
     }
   }
@@ -96,7 +95,7 @@ sub dict_slurp {
 
     for my $kidx (@kidcs) {
 
-      my @k = ( ref $kidx ?  @r[@$kidx] : $r[$kidx] );
+      my @k = ( ref $kidx ? @r[@$kidx] : $r[$kidx] );
       @k = map { $_ // '' } @k;
       @k = sort @k if ( $c{sort_keys} );
       my $k = join( $;, @k ) // '';
@@ -106,10 +105,10 @@ sub dict_slurp {
       } elsif ( not defined $vidx ) {
         $map{$k}++;
       } elsif ($uniq) {
-        $map{$k} = ( ref $vidx ? [ @r[@$vidx] ] : ($vidx eq 'all' ? \@r : $r[$vidx] ));
+        $map{$k} = ( ref $vidx ? [ @r[@$vidx] ] : ( $vidx eq 'all' ? \@r : $r[$vidx] ) );
       } else {
         $map{$k} //= [];
-        push @{ $map{$k} }, ( ref $vidx ? [ @r[@$vidx] ] : ($vidx eq 'all' ? \@r : $r[$vidx] ));
+        push @{ $map{$k} }, ( ref $vidx ? [ @r[@$vidx] ] : ( $vidx eq 'all' ? \@r : $r[$vidx] ) );
       }
     }
   }
@@ -151,14 +150,14 @@ sub mslurp {
     comment          => $COMMENT_RE,
     commented_header => undef,
     record_filter    => undef,
-    col_idx => undef,
+    col_idx          => undef,
     %$cc
   );
 
   my $record_filter = $c{record_filter};
 
   my @col_idx;
-  @col_idx = @{$c{col_idx}} if($c{col_idx} && ref $c{col_idx} eq 'ARRAY');
+  @col_idx = @{ $c{col_idx} } if ( $c{col_idx} && ref $c{col_idx} eq 'ARRAY' );
   my @header;
   my @row_names;
 
@@ -193,7 +192,7 @@ sub mslurp {
 
     push @row_names, shift @row if ( $c{row_names} );
 
-    push @m, (@col_idx ? [ @row[@col_idx] ] : \@row);
+    push @m, ( @col_idx ? [ @row[@col_idx] ] : \@row );
   }
   $fh->close unless ($fh_was_open);
 
@@ -215,7 +214,7 @@ sub miterate {
   my %c = (
     sep           => qr/\t/,
     skip          => 0,
-    comment          => $COMMENT_RE,
+    comment       => $COMMENT_RE,
     record_filter => undef,
     %$cc
   );
@@ -245,10 +244,10 @@ sub miterate {
 sub lspew {
   my ( $dest, $l, $c ) = @_;
   my $delim = $c->{sep} // $c->{delim} // "\t";
-  my $header   = $c->{header}    // $c->{ids};
+  my $header = $c->{header} // $c->{ids};
   my ( $fh, $fh_was_open ) = open_on_demand( $dest, '>' );
 
-  say $fh join($delim, @$header) if($header && @$header > 0);
+  say $fh join( $delim, @$header ) if ( $header && @$header > 0 );
 
   if ( ref $l eq 'HASH' ) {
     while ( my ( $k, $v ) = each %$l ) {
@@ -334,7 +333,7 @@ sub mspew {
     #add the values
     push @r, @{ $m->[$i] // [] } if ( $i < @$m );
     #fill the square if desired
-    if ($square || $fill_rows) {
+    if ( $square || $fill_rows ) {
       my $missing = $num_cols - @r;
       push @r, (undef) x $missing;
     }
@@ -349,8 +348,7 @@ sub _quote {
   my ( $f, $q, $na ) = @_;
   $na = "$na" if ( $q && defined $na );
   my @fields = map {
-    if ( !defined )
-    {
+    if ( !defined ) {
       $na;
     } elsif ( !$q || /^\d+$/ ) {
       $_;
@@ -412,11 +410,9 @@ sub xlsx_slurp {
 
   my $excel = Spreadsheet::XLSX->new($src);
 
-  my %ms;
+  my @ms;
 
   for my $sheet ( @{ $excel->{Worksheet} } ) {
-
-    my $sname = $sheet->{Name};
 
     my @m;
     my $cells = $sheet->{Cells};
@@ -425,9 +421,9 @@ sub xlsx_slurp {
       for my $cell (@$r) { push @e, $cell->{Val}; }
       push @m, \@e;
     }
-    $ms{$sname} = \@m;
+    push @ms, \@m;
   }
-  return \%ms;
+  return \@ms;
 }
 
 1;
