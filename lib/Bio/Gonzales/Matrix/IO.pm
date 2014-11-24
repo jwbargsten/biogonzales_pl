@@ -323,7 +323,11 @@ sub mspew {
   my ( $fh, $fh_was_open ) = open_on_demand( $dest, '>' );
 
   #print header if we have header
-  say $fh join $sep, @{ _quote( $header, $quote_is_on, $na_value ) } if ($header);
+  if ($header) {
+    my @qhead = @{ _quote( $header, $quote_is_on, $na_value ) };
+    unshift @qhead, '' if ( $rownames && !$c->{r_style_header} );
+    say $fh join $sep, @qhead;
+  }
 
   #iterate through rows
   for ( my $i = 0; $i < $num_rows; $i++ ) {
@@ -376,7 +380,11 @@ sub xlsx_spew {
 
   my @table;
   #print header if we have header
-  push @table, $header if ($header);
+  if ($header) {
+    my @qhead = @$header;
+    unshift @qhead, '' if ($rownames);
+    push @table, \@qhead;
+  }
 
   #iterate through rows
   for ( my $i = 0; $i < @$m; $i++ ) {
