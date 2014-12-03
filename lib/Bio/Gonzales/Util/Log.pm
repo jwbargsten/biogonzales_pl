@@ -102,19 +102,95 @@ __END__
 
 =head1 NAME
 
-
+Bio::Gonzales::Util::Log - basic logging for Bio::Gonzales
 
 =head1 SYNOPSIS
 
+    # logs to stderr by default
+    my $l = Bio::Gonzales::Util::Log->new();
+    $l->info("started application");
 
 =head1 DESCRIPTION
 
 First of all: Shamelessly stolen from Mojo::Log, thanks to Sebastian Riedel & contributors for creating it.
 
-=head1 OPTIONS
-
-=head1 SUBROUTINES
 =head1 METHODS
+
+=over 4
+
+=item B<< $log->path($file) >>
+
+Sets or gets the log file path. If not set, STDERR is used.
+
+=item B<< $log->level($level) >>
+
+Sets or gets the threshold level for logging. Everything lower than this level will not be logged. By default C<debug>.
+
+=item B<< $log->namespace($namespace) >>
+
+Sets or gets the namespace of the logger.
+
+=item B<< $log->tee_stderr($bool) >>
+
+Log to file and STDERR. If no path is set, setting this option has no effect.
+
+=item B<< $log->append($bool) >>
+
+If 1, the logger appends the log output to the log file.
+
+=item B<< $log->debug(@lines) >>
+
+Log debug message.
+
+=item B<< $log->error(@lines) >>
+
+Log error message.
+
+=item B<< $log->warn(@lines) >>
+
+Log warning message.
+
+=item B<< $log->fatal(@lines) >>
+
+Log fatal message.
+
+=item B<< $log->info(@lines) >>
+
+Log info message.
+
+=item B<< $log_text = $log->format($level, @lines) >>
+
+Format C<@lines> and return the formatted text.
+
+=item B<< $log->is_debug >>
+
+Return true if log level is debug.
+
+=item B<< $log->is_error >>
+
+Return true if log level is error.
+
+=item B<< $log->is_fatal >>
+
+Return true if log level is fatal.
+
+=item B<< $log->is_info >>
+
+Return true if log level is info.
+
+=item B<< $log->is_warn >>
+
+Return true if log level is warn.
+
+=item B<< $log->is_level($level) >>
+
+Return true if log level is C<$level>
+
+=item B<< $log->log($level, @lines) >>
+
+Logs C<$lines> with C<$level> to log destination.
+
+=back
 
 =head1 SEE ALSO
 
