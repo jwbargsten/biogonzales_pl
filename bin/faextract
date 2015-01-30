@@ -9,6 +9,9 @@ use Carp;
 use 5.010;
 
 use Bio::Gonzales::Seq::IO qw/faslurp faiterate/;
+use Bio::Gonzales::Matrix::IO;
+use Data::Dumper;
+
 use Bio::Gonzales::Util::File qw/slurpc/;
 use FindBin;
 
@@ -17,11 +20,24 @@ my ( $idlist, @files ) = @ARGV;
 confess "usage: $FindBin::Script <FILE_WITH_ONE_ID_PER_LINE> <FASTA_FILE_1> ... <FASTA_FILE_N>"
   unless ( $idlist && @files && @files > 0 );
 
-my %ids = map { $_ => 1 } slurpc($idlist);
+my %ids;
+for my $r ( @{ scalar mslurp( $idlist, { sep => qr/\s+/ } ) } ) {
+  $ids{ $r->[0] } //= [];
+  push @{ $ids{ $r->[0] } }, $r;
+}
 
 for my $f (@files) {
   my $fi = faiterate($f);
   while ( my $s = $fi->() ) {
-    print $s if ( $ids{ $s->id } );
+    my $regions = $ids{ $s->id };
+    if ($regions) {
+      for my $r (@$regions) {
+        if ( @$r == 1 ) {
+          print $s;
+        } elsif ( @$r == 3 ) {
+          print $s->subseq( [ @{$r}[ 1, 2 ] ] );
+        }
+      }
+    }
   }
 }

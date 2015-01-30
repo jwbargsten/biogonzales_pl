@@ -14,7 +14,7 @@ use Bio::Gonzales::Seq::IO qw/faiterate faspew/;
 use Bio::Gonzales::Stat::Util qw/hist_text/;
 my (
   $is_revcom_seq, $help,    $length,   @id,          $desc,  $seq,       $only_id,
-  $only_head,     $verbose, $only_len, $is_inverted, $count, $only_char, $print_hist
+  $only_head,     $verbose, $only_len, $is_inverted, $count, $only_char, $print_hist, $is_print_full
 );
 
 my $shift_id = 0;
@@ -32,6 +32,7 @@ GetOptions(
   "shift_id=i"      => \$shift_id,
   "verbose|v"       => \$verbose,
   "revcom"          => \$is_revcom_seq,
+  "print" => \$is_print_full,
   "invert"          => \$is_inverted,
   "num_ids|n"       => \$count,
 ) or pod2usage( -verbose => 2 );
@@ -70,8 +71,8 @@ for my $file (@files) {
   my $number_of_seqs = 0;
   while ( my $so = $seqin->() ) {
     if (
-      ( !$length || eval( $so->length . $length ) )
-      && (
+      ( !$length || eval($so->length . $length) )
+      && ((
            ( @id && any { $so->id =~ /$_/ } @id )
         || ( $seq  && $so->seq =~ /$seq/ )
         || ( $desc && $so->desc =~ /$desc/ )
@@ -86,7 +87,7 @@ for my $file (@files) {
           || $only_len
           || $only_char )
       )
-      )
+       ||  $is_print_full))
     {
       say STDERR $so->id . " matches."
         if ($verbose);
@@ -184,6 +185,10 @@ Show character distributions for every sequence
 =item B<--verbose | -v>
 
 Print matching ids to STDERR
+
+=item B<--print>
+
+just print the sequence (use in combination with filter length)
 
 =item B<< --shift_id <N> >>
 
