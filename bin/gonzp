@@ -114,7 +114,10 @@ if ( $cmd =~ /^i(nit)?/ ) {
 .PHONY: all
 
 ifndef ANALYSIS_VERSION
-ANALYSIS_VERSION=$(shell cat av)
+  ifneq ("$(wildcard av)","")
+    ANALYSIS_VERSION=$(shell cat av)
+  else
+    ANALYSIS_VERSION="."
 endif
 
 $(info running AV $(ANALYSIS_VERSION))
