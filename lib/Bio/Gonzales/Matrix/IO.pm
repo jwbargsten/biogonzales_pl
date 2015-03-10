@@ -12,7 +12,7 @@ use Bio::Gonzales::Matrix::Util qw/uniq_rows/;
 use 5.010;
 
 use List::Util qw/max/;
-use Bio::Gonzales::Util::File qw/open_on_demand slurpc/;
+use Bio::Gonzales::Util::File qw/open_on_demand slurpc expand_home/;
 
 use base 'Exporter';
 our ( @EXPORT, @EXPORT_OK, %EXPORT_TAGS );
@@ -414,7 +414,10 @@ sub xlsx_slurp {
   #my @m;
   #my ( $fh, $fh_was_open ) = open_on_demand( $src, '<' );
 
+
   eval "use Spreadsheet::XLSX; 1" or confess "could not load Spreadsheet::XLSX";
+
+  $src = expand_home($src) if ( !ref($src) );
 
   my $excel = Spreadsheet::XLSX->new($src);
 

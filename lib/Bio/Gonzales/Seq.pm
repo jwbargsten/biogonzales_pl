@@ -278,7 +278,7 @@ sub subseq_as_string {
         if ( $seq =~ /[^AGCTN]/i );
     }
 
-    $seq = _revcom_from_string( $seq, $self->_guess_alphabet );
+    $seq = _revcom_from_string( $seq, $self->guess_alphabet );
   }
 
   return wantarray ? ( $seq, [ $b, $e, $strand, @rest ] ) : $seq;
