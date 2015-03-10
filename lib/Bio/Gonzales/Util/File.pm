@@ -28,7 +28,7 @@ our $EXTERNAL_BZIP2 = which('bzip2');
 @EXPORT      = qw(glob_regex epath bname openod spath);
 %EXPORT_TAGS = ();
 @EXPORT_OK
-  = qw(expand_path slurpc basename regex_glob open_on_demand is_newer splitpath %ZMODES is_archive expand_home);
+  = qw(expand_path slurpc basename regex_glob open_on_demand is_newer splitpath %ZMODES is_archive expand_home gonzopen);
 
 sub epath { expand_path(@_) }
 
@@ -98,7 +98,9 @@ sub splitpath {
   return ( $dir, $filename );
 }
 
-sub openod { return open_on_demand(@_) }
+sub openod { confess "this function is deprecated, use gonzopen instead"; }
+
+sub gonzopen { ( my $fh ) = open_on_demand(@_); return $fh; }
 
 sub open_on_demand {
   my ( $src, $mode ) = @_;
