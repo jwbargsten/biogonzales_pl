@@ -12,7 +12,7 @@ our ( @EXPORT, @EXPORT_OK, %EXPORT_TAGS );
 
 @EXPORT      = qw();
 %EXPORT_TAGS = ();
-@EXPORT_OK   = qw(uniq_rows uniq_rows_secure as_matrix);
+@EXPORT_OK   = qw(uniq_rows uniq_rows_secure as_matrix preview);
 
 sub uniq_rows {
   my $matrix = shift;
@@ -46,6 +46,29 @@ sub as_matrix {
     }
   }
   return \@m;
+}
+
+sub preview {
+  my ($m) = @_;
+
+  return unless ( $m && @$m > 0 );
+  my @preview;
+  if ( ref $m->[0] ) {
+    if ( @$m > 6 ) {
+      my @dots = ("...") x scalar @{ $m->[0] };
+      push @preview, @{$m}[ 0 .. 2 ], \@dots, @{$m}[ -3, -2, -1 ];
+    } else {
+      @preview = @$m;
+    }
+  } else {
+    if ( @$m > 6 ) {
+      push @preview, @{$m}[ 0 .. 2 ], '...', @{$m}[ -3, -2, -1 ];
+    } else {
+      @preview = @$m;
+    }
+  }
+  return \@preview;
+
 }
 
 1;
