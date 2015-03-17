@@ -49,20 +49,25 @@ sub as_matrix {
 }
 
 sub preview {
-  my ($m) = @_;
+  my ($m, $c) = @_;
 
   return unless ( $m && @$m > 0 );
   my @preview;
   if ( ref $m->[0] ) {
-    if ( @$m > 6 ) {
-      my @dots = ("...") x scalar @{ $m->[0] };
-      push @preview, @{$m}[ 0 .. 2 ], \@dots, @{$m}[ -3, -2, -1 ];
+    if ( @$m >= 6 ) {
+      push @preview, @{$m}[ 0 .. 2 ];
+      push @preview, [("...") x scalar @{ $m->[0] }] if(($c->{dots} && @$m > 6) || $c->{force_dots});
+      push @preview, @{$m}[ -3, -2, -1 ];
     } else {
       @preview = @$m;
     }
   } else {
-    if ( @$m > 6 ) {
-      push @preview, @{$m}[ 0 .. 2 ], '...', @{$m}[ -3, -2, -1 ];
+    if ( @$m >= 6 ) {
+      push @preview, @{$m}[ 0 .. 2 ];
+      
+      push @preview, '...' if(($c->{dots} && @$m > 6) || $c->{force_dots});
+      
+      push @preview, @{$m}[ -3, -2, -1 ];
     } else {
       @preview = @$m;
     }

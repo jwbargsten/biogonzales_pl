@@ -28,6 +28,6 @@ my @test_res = (
   [ 'x' .. 'z' ],
 );
 
-is_deeply( preview( \@test ), \@test_res );
+is_deeply( preview( \@test, { dots => 1} ), \@test_res );
 
 done_testing();
