@@ -414,27 +414,31 @@ sub xlsx_slurp {
   #my @m;
   #my ( $fh, $fh_was_open ) = open_on_demand( $src, '<' );
 
-
-  eval "use Spreadsheet::XLSX; 1" or confess "could not load Spreadsheet::XLSX";
+  eval "use Spreadsheet::ParseXLSX; 1" or confess "could not load Spreadsheet::ParseXLSX";
 
   $src = expand_home($src) if ( !ref($src) );
 
-  my $excel = Spreadsheet::XLSX->new($src);
-
-  my @ms;
-
-  for my $sheet ( @{ $excel->{Worksheet} } ) {
-
-    my @m;
-    my $cells = $sheet->{Cells};
-    for my $r (@$cells) {
-      my @e;
-      for my $cell (@$r) { push @e, $cell->{Val}; }
-      push @m, \@e;
-    }
-    push @ms, \@m;
+  my $parser   = Spreadsheet::ParseXLSX->new;
+  my $workbook = $parser->parse($src);
+  if ( !defined $workbook ) {
+    confess $parser->error(), ".\n";
   }
-  return \@ms;
+
+  my @ws;
+  for my $worksheet ( $workbook->worksheets() ) {
+    my @w;
+    my ( $row_min, $row_max ) = $worksheet->row_range();
+    my ( $col_min, $col_max ) = $worksheet->col_range();
+    for ( my $i = $row_min; $i <= $row_max; $i++ ) {
+      my @r;
+      for ( my $j = $col_min; $j <= $col_max; $j++ ) {
+        push @r, $worksheet->get_cell( $i, $j )->unformatted;
+      }
+      push @w, \@r;
+    }
+    push @ws, \@w;
+  }
+  return \@ws;
 }
 
 1;
