@@ -9,29 +9,55 @@ use 5.010;
 use File::Spec::Functions qw/catfile/;
 use Bio::Gonzales::Project;
 use Carp;
+use Bio::Gonzales::Util::Cerial;
 
 use base 'Exporter';
 our ( @EXPORT, @EXPORT_OK, %EXPORT_TAGS );
 # VERSION
 
-@EXPORT      = qw(catfile nfi analysis_version path_to analysis_path gonzlog gonzconf iof $GONZLOG gonzc gonzl);
+@EXPORT
+  = qw(catfile nfi analysis_version path_to analysis_path gonzlog gonzconf iof $GONZLOG gonzc gonzl gonz_iterate);
 %EXPORT_TAGS = ();
 @EXPORT_OK   = qw();
 
 my $bgp = Bio::Gonzales::Project->new();
 
-our $GONZLOG          = $bgp->log;
+our $GONZLOG = $bgp->log;
 
 sub analysis_version { $bgp->analysis_version(@_) }
-sub path_to       { $bgp->path_to(@_) }
-sub gonzlog       { $bgp->log() }
-sub gonzl         { $bgp->log() }
-sub nfi           { $bgp->nfi(@_) }
-sub iof           { $bgp->conf(@_) }
-sub gonzconf      { $bgp->conf(@_) }
-sub gonzc         { $bgp->conf(@_) }
-sub analysis_path { $bgp->analysis_path(@_) }
+sub path_to          { $bgp->path_to(@_) }
+sub gonzlog          { $bgp->log() }
+sub gonzl            { $bgp->log() }
+sub nfi              { $bgp->nfi(@_) }
+sub iof              { $bgp->conf(@_) }
+sub gonzconf         { $bgp->conf(@_) }
+sub gonzc            { $bgp->conf(@_) }
+sub analysis_path    { $bgp->analysis_path(@_) }
 
+sub gonz_iterate {
+  my ( $src, $code ) = @_;
+  my $data;
+  my $ref_type = ref($src);
+  if ( !$ref_type || ( $ref_type ne 'ARRAY' && $ref_type ne 'HASH' ) ) {
+    $data = jslurp($src);
+  } else {
+    $data = $src;
+  }
+
+  my @res;
+  if ( ref($data) eq 'ARRAY' ) {
+    for ( my $i = 0; $i < @$data; $i++ ) {
+      push @res, $code->( $i, $data->[$i] );
+    }
+
+  } elsif ( ref($data) eq 'HASH' ) {
+    for my $k ( keys %$data ) {
+      push @res, $code->( $k, $data->{$k} );
+    }
+
+  }
+  return \@res;
+}
 1;
 
 __END__

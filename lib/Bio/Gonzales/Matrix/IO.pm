@@ -6,6 +6,7 @@ use Carp;
 use Data::Dumper;
 use List::MoreUtils qw/uniq/;
 use Bio::Gonzales::Util qw/flatten/;
+use Text::CSV_XS qw/csv/;
 
 use Bio::Gonzales::Matrix::Util qw/uniq_rows/;
 
@@ -18,7 +19,7 @@ use base 'Exporter';
 our ( @EXPORT, @EXPORT_OK, %EXPORT_TAGS );
 # VERSION
 
-@EXPORT      = qw(mslurp mspew lslurp miterate lspew dict_slurp dict_spew);
+@EXPORT      = qw(mslurp mspew lslurp miterate lspew dict_slurp dict_spew xcsv_slurp);
 %EXPORT_TAGS = ();
 @EXPORT_OK   = qw(lspew xlsx_slurp xlsx_spew);
 my $COMMENT_RE = qr/^\s*#/;
@@ -205,6 +206,28 @@ sub mslurp {
     return \@m;
   }
 }
+
+sub xcsv_slurp {
+  my ( $src, $c ) = @_;
+
+  my ( $fh, $fh_was_open ) = open_on_demand( $src, '<' );
+
+  my $data = do { local $/; <$fh> } or confess "No data to analyze\n";
+  $fh->close unless ($fh_was_open);
+
+  $c->{sep} //= $data =~ m/["\d],["\d,]/ ? ","  :
+           $data =~ m/["\d];["\d;]/ ? ";"  :
+           $data =~ m/["\d]\t["\d]/ ? "\t" :
+           # If neither, then for unquoted strings
+           $data =~ m/\w,[\w,]/     ? ","  :
+           $data =~ m/\w;[\w;]/     ? ";"  :
+           $data =~ m/\w\t[\w]/     ? "\t" : ",";
+    open my $dfh,'<',\$data or die "Can't open filehandle: $!";
+    my $aoa = csv( in => $dfh, sep_char => $c->{sep}, quote_char => '"', escape_char => '"');
+    close $dfh;
+  return $aoa;
+}
+
 
 sub miterate {
   my ( $src, $cc ) = @_;
