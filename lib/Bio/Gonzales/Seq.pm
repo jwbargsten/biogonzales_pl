@@ -6,6 +6,7 @@ use overload '""' => 'all';
 use Carp;
 use Data::Dumper;
 
+our $WIDTH = 80;
 # VERSION
 
 has id     => ( is => 'rw', required   => 1 );
@@ -49,6 +50,7 @@ sub BUILDARGS {
 
 sub Format_seq_string {
   my ($str, $width) = @_;
+  $width //= $WIDTH;
 
   if ( defined $str && length($str) > 0 ) {
     $str =~ tr/ \t\n\r//d;            # Remove whitespace and numbers
@@ -141,7 +143,8 @@ sub all { shift->stringify(@_) }
 sub all_formatted { shift->stringify_pretty(@_) }
 
 sub stringify_pretty {
-  my ($self) = @_;
+  my ($self, $width) = @_;
+  $width //= $WIDTH;
 
   return
       ">"

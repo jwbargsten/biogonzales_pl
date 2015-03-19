@@ -19,7 +19,7 @@ our ( @EXPORT, @EXPORT_OK, %EXPORT_TAGS );
 %EXPORT_TAGS = ();
 @EXPORT_OK   = qw(fahash);
 
-our $WIDTH = 80;
+our $WIDTH = $Bio::Gonzales::Seq::WIDTH;
 
 our $SEQ_FORMAT = 'all';
 
