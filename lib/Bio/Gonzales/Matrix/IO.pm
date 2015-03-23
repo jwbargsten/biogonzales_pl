@@ -212,22 +212,25 @@ sub xcsv_slurp {
 
   my ( $fh, $fh_was_open ) = open_on_demand( $src, '<' );
 
-  my $data = do { local $/; <$fh> } or confess "No data to analyze\n";
+  my $data = do { local $/; <$fh> }
+    or confess "No data to analyze\n";
   $fh->close unless ($fh_was_open);
 
-  $c->{sep} //= $data =~ m/["\d],["\d,]/ ? ","  :
-           $data =~ m/["\d];["\d;]/ ? ";"  :
-           $data =~ m/["\d]\t["\d]/ ? "\t" :
-           # If neither, then for unquoted strings
-           $data =~ m/\w,[\w,]/     ? ","  :
-           $data =~ m/\w;[\w;]/     ? ";"  :
-           $data =~ m/\w\t[\w]/     ? "\t" : ",";
-    open my $dfh,'<',\$data or die "Can't open filehandle: $!";
-    my $aoa = csv( in => $dfh, sep_char => $c->{sep}, quote_char => '"', escape_char => '"');
-    close $dfh;
+  $c->{sep} //=
+      $data =~ m/["\d],["\d,]/ ? ","
+    : $data =~ m/["\d];["\d;]/ ? ";"
+    : $data =~ m/["\d]\t["\d]/ ? "\t"
+    :
+    # If neither, then for unquoted strings
+      $data =~ m/\w,[\w,]/ ? ","
+    : $data =~ m/\w;[\w;]/ ? ";"
+    : $data =~ m/\w\t[\w]/ ? "\t"
+    :                        ",";
+  open my $dfh, '<', \$data or die "Can't open filehandle: $!";
+  my $aoa = csv( in => $dfh, sep_char => $c->{sep}, quote_char => '"', escape_char => '"' );
+  close $dfh;
   return $aoa;
 }
-
 
 sub miterate {
   my ( $src, $cc ) = @_;
@@ -455,7 +458,8 @@ sub xlsx_slurp {
     for ( my $i = $row_min; $i <= $row_max; $i++ ) {
       my @r;
       for ( my $j = $col_min; $j <= $col_max; $j++ ) {
-        push @r, $worksheet->get_cell( $i, $j )->unformatted;
+        my $e = $worksheet->get_cell( $i, $j );
+        push @r, (defined($e) ? $e->unformatted : undef);
       }
       push @w, \@r;
     }
