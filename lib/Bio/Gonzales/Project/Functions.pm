@@ -17,7 +17,7 @@ our ( @EXPORT, @EXPORT_OK, %EXPORT_TAGS );
 # VERSION
 
 @EXPORT
-  = qw(catfile nfi analysis_version path_to analysis_path gonzlog gonzconf iof $GONZLOG gonzc gonzl gonz_iterate);
+  = qw(catfile nfi analysis_version path_to analysis_path gonzlog gonzconf iof $GONZLOG gonzc gonzl gonz_iterate gonzsys);
 %EXPORT_TAGS = ();
 @EXPORT_OK   = qw();
 
@@ -34,6 +34,8 @@ sub iof              { $bgp->conf(@_) }
 sub gonzconf         { $bgp->conf(@_) }
 sub gonzc            { $bgp->conf(@_) }
 sub analysis_path    { $bgp->analysis_path(@_) }
+
+sub gonzsys { system(@_) == 0 or confess "system failed: $?"; }
 
 sub gonz_iterate {
   my ( $src, $code, $conf ) = @_;
