@@ -153,7 +153,7 @@ sub validate {
       }
       undef $header;
     } else {
-      $self->_add_error( $., " ERROR IM SCRPT " );
+      $self->_add_error( $., " ERROR IN THE SCRIPT" );
     }
   }
   return $self->_error_cache;

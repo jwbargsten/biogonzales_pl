@@ -6,19 +6,20 @@ use Carp;
 use Data::Dumper;
 use List::MoreUtils qw/uniq/;
 use Bio::Gonzales::Util qw/flatten/;
+use Text::CSV_XS qw/csv/;
 
 use Bio::Gonzales::Matrix::Util qw/uniq_rows/;
 
 use 5.010;
 
 use List::Util qw/max/;
-use Bio::Gonzales::Util::File qw/open_on_demand slurpc/;
+use Bio::Gonzales::Util::File qw/open_on_demand slurpc expand_home/;
 
 use base 'Exporter';
 our ( @EXPORT, @EXPORT_OK, %EXPORT_TAGS );
 # VERSION
 
-@EXPORT      = qw(mslurp mspew lslurp miterate lspew dict_slurp dict_spew);
+@EXPORT      = qw(mslurp mspew lslurp miterate lspew dict_slurp dict_spew xcsv_slurp);
 %EXPORT_TAGS = ();
 @EXPORT_OK   = qw(lspew xlsx_slurp xlsx_spew);
 my $COMMENT_RE = qr/^\s*#/;
@@ -204,6 +205,31 @@ sub mslurp {
   } else {
     return \@m;
   }
+}
+
+sub xcsv_slurp {
+  my ( $src, $c ) = @_;
+
+  my ( $fh, $fh_was_open ) = open_on_demand( $src, '<' );
+
+  my $data = do { local $/; <$fh> }
+    or confess "No data to analyze\n";
+  $fh->close unless ($fh_was_open);
+
+  $c->{sep} //=
+      $data =~ m/["\d],["\d,]/ ? ","
+    : $data =~ m/["\d];["\d;]/ ? ";"
+    : $data =~ m/["\d]\t["\d]/ ? "\t"
+    :
+    # If neither, then for unquoted strings
+      $data =~ m/\w,[\w,]/ ? ","
+    : $data =~ m/\w;[\w;]/ ? ";"
+    : $data =~ m/\w\t[\w]/ ? "\t"
+    :                        ",";
+  open my $dfh, '<', \$data or die "Can't open filehandle: $!";
+  my $aoa = csv( in => $dfh, sep_char => $c->{sep}, quote_char => '"', escape_char => '"' );
+  close $dfh;
+  return $aoa;
 }
 
 sub miterate {
@@ -414,24 +440,32 @@ sub xlsx_slurp {
   #my @m;
   #my ( $fh, $fh_was_open ) = open_on_demand( $src, '<' );
 
-  eval "use Spreadsheet::XLSX; 1" or confess "could not load Spreadsheet::XLSX";
+  eval "use Spreadsheet::ParseXLSX; 1" or confess "could not load Spreadsheet::ParseXLSX";
 
-  my $excel = Spreadsheet::XLSX->new($src);
+  $src = expand_home($src) if ( !ref($src) );
 
-  my @ms;
-
-  for my $sheet ( @{ $excel->{Worksheet} } ) {
-
-    my @m;
-    my $cells = $sheet->{Cells};
-    for my $r (@$cells) {
-      my @e;
-      for my $cell (@$r) { push @e, $cell->{Val}; }
-      push @m, \@e;
-    }
-    push @ms, \@m;
+  my $parser   = Spreadsheet::ParseXLSX->new;
+  my $workbook = $parser->parse($src);
+  if ( !defined $workbook ) {
+    confess $parser->error(), ".\n";
   }
-  return \@ms;
+
+  my @ws;
+  for my $worksheet ( $workbook->worksheets() ) {
+    my @w;
+    my ( $row_min, $row_max ) = $worksheet->row_range();
+    my ( $col_min, $col_max ) = $worksheet->col_range();
+    for ( my $i = $row_min; $i <= $row_max; $i++ ) {
+      my @r;
+      for ( my $j = $col_min; $j <= $col_max; $j++ ) {
+        my $e = $worksheet->get_cell( $i, $j );
+        push @r, (defined($e) ? $e->unformatted : undef);
+      }
+      push @w, \@r;
+    }
+    push @ws, \@w;
+  }
+  return \@ws;
 }
 
 1;

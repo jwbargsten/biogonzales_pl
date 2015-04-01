@@ -37,7 +37,7 @@ if ( $opt{filter} ) {
 my $map = dict_slurp( $map_fn,
   { key_idx => $opt{from}, val_idx => $opt{to}, uniq => 0, record_filter => $filter } );
 
-my  $fh  = gonzopen( $data_fn, '<' );
+my $fh   = gonzopen( $data_fn, '<' );
 my $out_fh = gonzopen( $out_fn,  '>' );
 
 if ( $opt{header} ) {

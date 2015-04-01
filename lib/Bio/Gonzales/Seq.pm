@@ -5,8 +5,8 @@ use Mouse;
 use overload '""' => 'all';
 use Carp;
 use Data::Dumper;
-use Bio::Gonzales::Seq::IO;
 
+our $WIDTH = 80;
 # VERSION
 
 has id     => ( is => 'rw', required   => 1 );
@@ -46,6 +46,18 @@ sub BUILDARGS {
   $a{seq} = _filter_seq( $a{seq} );
 
   return \%a;
+}
+
+sub Format_seq_string {
+  my ($str, $width) = @_;
+  $width //= $WIDTH;
+
+  if ( defined $str && length($str) > 0 ) {
+    $str =~ tr/ \t\n\r//d;            # Remove whitespace and numbers
+    $str =~ s/\d+//g;
+    $str =~ s/(.{1,$width})/$1\n/g;
+    return $str;
+  }
 }
 
 sub def {
@@ -131,13 +143,14 @@ sub all { shift->stringify(@_) }
 sub all_formatted { shift->stringify_pretty(@_) }
 
 sub stringify_pretty {
-  my ($self) = @_;
+  my ($self, $width) = @_;
+  $width //= $WIDTH;
 
   return
       ">"
     . $self->id
     . ( $self->desc ? $self->delim . $self->desc : "" ) . "\n"
-    . Bio::Gonzales::Seq::IO::format_seq_string( $self->seq );
+    . Format_seq_string( $self->seq );
 }
 
 sub all_pretty { shift->stringify_pretty(@_) }
@@ -278,7 +291,7 @@ sub subseq_as_string {
         if ( $seq =~ /[^AGCTN]/i );
     }
 
-    $seq = _revcom_from_string($seq, $self->guess_alphabet);
+    $seq = _revcom_from_string( $seq, $self->guess_alphabet );
   }
 
   return wantarray ? ( $seq, [ $b, $e, $strand, @rest ] ) : $seq;
