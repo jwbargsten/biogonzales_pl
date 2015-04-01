@@ -35,7 +35,10 @@ sub gonzconf         { $bgp->conf(@_) }
 sub gonzc            { $bgp->conf(@_) }
 sub analysis_path    { $bgp->analysis_path(@_) }
 
-sub gonzsys { system(@_) == 0 or confess "system failed: $?"; }
+sub gonzsys {
+  $bgp->log->info( "exec: " . join " ", @_ );
+  system(@_) == 0 or confess "system failed: $?";
+}
 
 sub gonz_iterate {
   my ( $src, $code, $conf ) = @_;
@@ -47,6 +50,11 @@ sub gonz_iterate {
   } else {
     $data = $src;
   }
+
+  if ( $conf->{test} ) {
+    $code = sub { say jfreeze( \@_ ) };
+  }
+
   my $pm = Parallel::ForkManager->new( $conf->{processes} );
 
   my @result_all;
