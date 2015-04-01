@@ -7,10 +7,11 @@ use Data::Dumper;
 
 BEGIN { use_ok('Bio::Gonzales::Project::Functions'); }
 
-my @a = (0..10);
-my @b;
-gonz_iterate(\@a, sub { $b[$_[0]] = $_[1] * $_[1] });
+my @a = ( 0..10);
+my $res = gonz_iterate(\@a, sub { [ $_[0], $_[1] * $_[1] ]} );
 
-my @b_ref = map { $_*$_ } @a;
-is_deeply(\@b, \@b_ref);
+my @b_ref = map { $_ * $_ } @a;
+$res = [ map { $_->[1] } sort { $a->[0] <=> $b->[0] } @$res ];
+
+is_deeply($res, \@b_ref);
 done_testing();

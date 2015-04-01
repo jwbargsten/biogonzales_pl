@@ -10,6 +10,7 @@ use File::Spec::Functions qw/catfile/;
 use Bio::Gonzales::Project;
 use Carp;
 use Bio::Gonzales::Util::Cerial;
+use Parallel::ForkManager;
 
 use base 'Exporter';
 our ( @EXPORT, @EXPORT_OK, %EXPORT_TAGS );
@@ -35,7 +36,8 @@ sub gonzc            { $bgp->conf(@_) }
 sub analysis_path    { $bgp->analysis_path(@_) }
 
 sub gonz_iterate {
-  my ( $src, $code ) = @_;
+  my ( $src, $code, $conf ) = @_;
+  $conf->{processes} //= 4;
   my $data;
   my $ref_type = ref($src);
   if ( !$ref_type || ( $ref_type ne 'ARRAY' && $ref_type ne 'HASH' ) ) {
@@ -43,20 +45,36 @@ sub gonz_iterate {
   } else {
     $data = $src;
   }
+  my $pm = Parallel::ForkManager->new( $conf->{processes} );
 
-  my @res;
+  my @result_all;
+  $pm->run_on_finish(
+    sub {
+      my ( $pid, $exit_code, $ident, $exit_signal, $core_dump, $res ) = @_;
+
+      if ( defined($res) && @$res > 0 ) {
+        push @result_all, $res;
+      }
+    }
+  );
+
   if ( ref($data) eq 'ARRAY' ) {
     for ( my $i = 0; $i < @$data; $i++ ) {
-      push @res, $code->( $i, $data->[$i] );
+      $pm->start and next;    # do the fork
+      my $res = $code->( $i, $data->[$i] );
+      $pm->finish( 0, $res );    # do the exit in the child process
     }
-
+    $pm->wait_all_children;
   } elsif ( ref($data) eq 'HASH' ) {
     for my $k ( keys %$data ) {
-      push @res, $code->( $k, $data->{$k} );
+      $pm->start and next;       # do the fork
+      my $res = $code->( $k, $data->{$k} );
+      $pm->finish( 0, $res );    # do the exit in the child process
     }
+    $pm->wait_all_children;
 
   }
-  return \@res;
+  return \@result_all;
 }
 1;
 
