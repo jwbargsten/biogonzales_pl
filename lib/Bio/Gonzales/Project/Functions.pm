@@ -52,7 +52,7 @@ sub gonz_iterate {
   }
 
   if ( $conf->{test} ) {
-    $code = sub { say jfreeze( \@_ ) };
+    $code = sub { say jfreeze( \@_ ); return };
   }
 
   my $pm = Parallel::ForkManager->new( $conf->{processes} );
