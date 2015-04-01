@@ -36,7 +36,7 @@ sub gonzc            { $bgp->conf(@_) }
 sub analysis_path    { $bgp->analysis_path(@_) }
 
 sub gonzsys {
-  $bgp->log->info( "exec: " . join " ", @_ );
+  $bgp->log->info("(exec) > " . join " ", @_ ). " <")
   system(@_) == 0 or confess "system failed: $?";
 }
 
