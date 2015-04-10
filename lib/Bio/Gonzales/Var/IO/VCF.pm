@@ -1,4 +1,4 @@
-package EZ::VarNext::VcfReader;
+package Bio::Gonzales::Var::IO::VCF;
 
 use Mouse;
 
@@ -70,16 +70,17 @@ sub next_var {
 
   my ( $chr, $pos, $id, $ref, $alt, $qual, $filter, $info, $format, @variants ) = split /\t/, $l;
   return {
-    seq_id  => $chr,
-    pos     => $pos,
-    var_id  => $id,
-    alleles => [ $ref, split(/,/, $alt) ],
-    qual   => $qual,
-    filter => $filter,
-    info   => $info,
-    format => $format,
-    genotypes    => \@variants,
+    seq_id    => $chr,
+    pos       => $pos + 0,
+    var_id    => $id,
+    alleles   => [ $ref, split( /,/, $alt ) ],
+    qual      => $qual,
+    filter    => $filter,
+    info      => $info,
+    format    => $format,
+    genotypes => \@variants,
   };
 }
 
-__PACKAGE__->meta->make_immutable();
+1;
+
