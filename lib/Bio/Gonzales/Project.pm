@@ -208,7 +208,7 @@ sub path_to {
   my $home = Bio::Gonzales::Util::Development::File::find_root(
     {
       location => '.',
-      dirs     => [ '.git', 'analysis', 'doc', ],
+      dirs     => [ '.git', 'analysis', ],
       files    => ['Makefile']
     }
   );

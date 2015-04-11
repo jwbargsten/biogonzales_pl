@@ -12,6 +12,7 @@ use List::Util qw/min max/;
 use File::Temp qw/tempdir tempfile/;
 use Bio::Gonzales::Seq::IO qw(faiterate faspew);
 use Capture::Tiny qw/capture_merged/;
+use Path::Tiny;
 
 use Params::Validate qw/validate/;
 our ( @EXPORT, @EXPORT_OK, %EXPORT_TAGS );
@@ -38,6 +39,7 @@ sub makeblastdb {
   $c{wd} //= './';
   my $unlink;
   my $seqf = $c{seq_file};
+  my $basename = basename( $c{seq_file} );
   if ( is_archive($seqf) ) {
     say STDERR "$seqf is an archive, extracting first ...";
     my $fait = faiterate($seqf);
@@ -49,9 +51,9 @@ sub makeblastdb {
     $unlink = 1;
     $seqf   = $fn;
     say STDERR "extraction finished. making blast DB";
+    $basename = basename($basename); # remove 2nd extension, e.g. a.fa.gz -> a.fa -> a
   }
 
-  my $basename = basename( $c{seq_file} );
   my @cmd      = 'makeblastdb';
   push @cmd, '-in',    $seqf;
   push @cmd, '-title', $basename;
