@@ -27,8 +27,8 @@ our $GONZLOG = $bgp->log;
 
 sub analysis_version { $bgp->analysis_version(@_) }
 sub path_to          { $bgp->path_to(@_) }
-sub gonzlog          { $bgp->log() }
-sub gonzl            { $bgp->log() }
+sub gonzlog          { confess "deprecated call syntax, use gonzl->info" if(@_ > 0 && $_[0]); $bgp->log() }
+sub gonzl            { confess "deprecated call syntax, use gonzl->info" if(@_ > 0 && $_[0]); $bgp->log() }
 sub nfi              { $bgp->nfi(@_) }
 sub iof              { $bgp->conf(@_) }
 sub gonzconf         { $bgp->conf(@_) }
