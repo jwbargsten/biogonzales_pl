@@ -51,3 +51,34 @@ for my $file (@files) {
   }
   print hist_text( \@values, { skip_empty => 1, breaks => $opt{breaks}, 'log10' => $opt{'log10'} } );
 }
+
+=head1 NAME
+
+  bg_fastat.pl - fasta file statistics
+
+=head1 SYNOPSIS
+
+  bg_fastat.pl [options] [<files>|-]
+
+  Options:
+
+   --help               Detailed help message
+   --version            Show script version
+   --n <float>          Calculate N-values 0.9 = N90, 0.5 = N50.
+   --min_len <int>      Set minimum sequence length
+                        (Everything lower will not be considered)
+   -l, --log10          Apply log scale
+   -b, --breaks <int>   Set the number of breaks
+
+
+=head1 EXAMPLES
+
+
+
+=head1 SEE ALSO
+
+=head1 AUTHOR
+
+jw bargsten, C<< <jw at bargsten dot org> >>
+
+=cut
