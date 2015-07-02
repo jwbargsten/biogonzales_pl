@@ -5,6 +5,9 @@ use Mouse;
 use overload '""' => 'all';
 use Carp;
 use Data::Dumper;
+use Digest::SHA1 qw/sha1_hex/;
+use Digest::MD5 qw/md5_hex/;
+
 
 our $WIDTH = 80;
 # VERSION
@@ -238,6 +241,14 @@ sub subseq {
     $new_seq->id( $new_seq->id . "|" . join( "|", @rest ) ) if ( @rest > 0 );
   }
   return $new_seq;
+}
+
+sub sha1_checksum {
+  return sha1_hex(uc(shift->seq));
+}
+
+sub md5_checksum {
+  return md5_hex(uc(shift->seq));
 }
 
 sub subseq_as_string {
