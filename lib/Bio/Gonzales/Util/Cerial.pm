@@ -7,6 +7,10 @@ use Bio::Gonzales::Util::File qw/open_on_demand/;
 
 use YAML::XS;
 use JSON::XS;
+use utf8
+
+use 5.010;
+
 use base 'Exporter';
 our ( @EXPORT, @EXPORT_OK, %EXPORT_TAGS );
 # VERSION
@@ -24,7 +28,8 @@ BEGIN {
 }
 
 sub jfreeze {
-    return JSON::XS->new->indent(1)->utf8->allow_nonref->encode(@_);
+  state $js = JSON::XS->new->indent(1)->utf8->allow_nonref;
+  return $js->encode(@_);
 }
 
 sub _spew {
@@ -32,7 +37,7 @@ sub _spew {
     my $data = shift;
 
     my ( $fh, $was_open ) = open_on_demand( $dest, '>' );
-    binmode $fh, ':utf8' unless(ref $fh eq 'IO::Zlib');
+    binmode $fh, ':utf8' unless(ref $fh eq 'IO::Zlib' || utf8::is_utf8($data));
     local $/ = "\n";
 
     print $fh $data;
