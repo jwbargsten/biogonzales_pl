@@ -7,7 +7,6 @@ use Bio::Gonzales::Util::File qw/open_on_demand/;
 
 use YAML::XS;
 use JSON::XS;
-use utf8
 
 use 5.010;
 
@@ -37,7 +36,7 @@ sub _spew {
     my $data = shift;
 
     my ( $fh, $was_open ) = open_on_demand( $dest, '>' );
-    binmode $fh, ':utf8' unless(ref $fh eq 'IO::Zlib' || utf8::is_utf8($data));
+    binmode $fh, ':utf8' unless(ref $fh eq 'IO::Zlib');
     local $/ = "\n";
 
     print $fh $data;
