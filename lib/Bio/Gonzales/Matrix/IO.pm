@@ -429,6 +429,7 @@ sub xlsx_spew {
 
   my $workbook  = Excel::Writer::XLSX->new($fh);
   my $worksheet = $workbook->add_worksheet();
+  $worksheet->keep_leading_zeros() if($c->{keep_leading_zeros});
   $worksheet->write_col( 'A1', \@table );
   $workbook->close;
   $fh->close unless ($fh_was_open);
