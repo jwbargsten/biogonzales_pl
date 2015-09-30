@@ -10,7 +10,7 @@ use Exporter 'import';
 
 our $VERSION = 0.01_01;
 
-our %EXPORT_TAGS = ( 'all' => [qw/geno2haplo renumber_genotypes merge_alleles/ ] );
+our %EXPORT_TAGS = ( 'all' => [qw/geno2haplo renumber_genotypes merge_alleles only_geno/ ] );
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 
 sub geno2haplo {
@@ -26,6 +26,11 @@ sub geno2haplo {
     push @haplotypes, split /[|\/]/, $g;
   }
   return ( \@haplotypes, $phased );
+}
+
+sub only_geno {
+  my $genotypes = shift;
+  my @res = map { index( $_, ':' ) >= 0 ? substr( $_, 0, index( $_, ':' ) ) : $_ } @$genotypes;
 }
 
 sub renumber_genotypes {
