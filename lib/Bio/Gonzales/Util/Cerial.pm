@@ -7,6 +7,9 @@ use Bio::Gonzales::Util::File qw/open_on_demand/;
 
 use YAML::XS;
 use JSON::XS;
+
+use 5.010;
+
 use base 'Exporter';
 our ( @EXPORT, @EXPORT_OK, %EXPORT_TAGS );
 # VERSION
@@ -24,7 +27,8 @@ BEGIN {
 }
 
 sub jfreeze {
-    return JSON::XS->new->indent(1)->utf8->allow_nonref->encode(@_);
+  state $js = JSON::XS->new->indent(1)->utf8->allow_nonref;
+  return $js->encode(@_);
 }
 
 sub _spew {
