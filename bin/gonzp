@@ -69,9 +69,9 @@ if ( $cmd =~ /^i(nit)?/ ) {
   create_readme( '.', $name, $date );
   say STDERR "creating git repo";
 
-  open my $gi_fh, '>', '.gitignore' or confess "Can't open filehandle: $!";
-  say $gi_fh "analysis";
-  $gi_fh->close;
+  #open my $gi_fh, '>', '.gitignore' or confess "Can't open filehandle: $!";
+  #say $gi_fh "analysis";
+  #$gi_fh->close;
 
   system qw/git init/;
   system qw(git add Makefile README .gitignore);
