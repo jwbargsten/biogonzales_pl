@@ -151,9 +151,9 @@ EOF
   ( my $pretty_name = $name );    # =~ s/^\d+_//;
   create_readme( '.', $pretty_name, $date );
 
-  system qw/git init/;
+  #system qw/git init/;
   system qw/git add Makefile README av gonz.conf.yml/;
-  system qw/git commit -m/, "initial commit";
+  system qw/git commit -m/, "added $name";
 
   if ($project_dir) {
     say STDERR 'updating project makefile';
