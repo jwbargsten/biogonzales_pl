@@ -25,6 +25,11 @@ sub _build_gaps {
   return $gaps;
 }
 
+sub ungapped_seq {
+  (my $seq = shift->seq) =~ tr/-.//d;
+  return $seq;
+}
+
 sub _build_length {
   return CORE::length( shift->seq() );
 }
@@ -49,6 +54,11 @@ sub BUILDARGS {
   $a{seq} = _filter_seq( $a{seq} );
 
   return \%a;
+}
+
+sub as_hash {
+  my $self = shift;
+  return { id => $self->id, desc => $self->desc, seq => $self->seq, info => $self->info };
 }
 
 sub Format_seq_string {
@@ -115,14 +125,14 @@ sub rm_gaps {
 sub clone {
   my ($self) = @_;
 
-  return __PACKAGE__->new( id => $self->id, desc => $self->desc, seq => $self->seq, delim => $self->delim );
+  return __PACKAGE__->new( id => $self->id, desc => $self->desc, seq => $self->seq, delim => $self->delim, info => $self->info );
   #shift->clone_object(@_)
 }
 
 sub clone_empty {
   my ($self) = @_;
 
-  return __PACKAGE__->new( id => $self->id, desc => $self->desc, seq => '', delim => $self->delim );
+  return __PACKAGE__->new( id => $self->id, desc => $self->desc, seq => '', delim => $self->delim , info => $self->info);
 }
 
 sub display_id { shift->id(@_) }
