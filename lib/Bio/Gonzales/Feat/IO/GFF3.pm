@@ -23,22 +23,6 @@ our $FASTA_RE         = qr/^\>/;
 our $SEQ_REGION_RE    = qr/^\#\#sequence-region\s+(\S+)\s+(\S+)\s+(\S+)\s*/;
 our $ATTR_UNESCAPE_RE = qr/%([0-9A-Fa-f]{2})/;
 
-our $ATTR_ESCAPE_RE = qr/([\x00-\x1F\x7F%&\=;,])/;
-
-our %FIXED_ATTRIBUTE_NAMES = (
-  ID            => 1,
-  Parent        => 2,
-  Target        => 3,
-  Name          => 4,
-  Alias         => 5,
-  Gap           => 6,
-  Derives_from  => 7,
-  Dbxref        => 9,
-  Ontology_term => 10,
-  Is_circular   => 11,
-  Note          => 99,
-);
-
 our @GFF_COLUMN_NAMES = qw/
   seq_id
   source
@@ -165,7 +149,7 @@ sub next_feat {
       push @{ $self->segments }, { id => $seqid, start => $start, end => $end };
     } elsif ( $l =~ /^\#\#\#/ ) {
       next;
-    } elsif ( $l =~ /^\#/ || $l=~ /^\s*$/ || $l =~ m{^//} ) {
+    } elsif ( $l =~ /^\#/ || $l =~ /^\s*$/ || $l =~ m{^//} ) {
       next;
     } elsif ( $l =~ /$FASTA_RE/ ) {
       $self->_parse_seq($l);
@@ -181,6 +165,32 @@ sub next_feat {
   return $feat;
 }
 
+sub next_feat_raw {
+  my ($self) = @_;
+
+  my $fhi = $self->_fhi;
+
+  my $l;
+  while ( defined( $l = $fhi->() ) ) {
+    if ( $l =~ /$SEQ_REGION_RE/ ) {
+      my ( $seqid, $start, $end ) = ( $1, $2, $3 );
+      push @{ $self->segments }, { id => $seqid, start => $start, end => $end };
+    } elsif ( $l =~ /^\#\#\#/ ) {
+      next;
+    } elsif ( $l =~ /^\#/ || $l =~ /^\s*$/ || $l =~ m{^//} ) {
+      next;
+    } elsif ( $l =~ /$FASTA_RE/ ) {
+      $self->_parse_seq($l);
+      next;
+    } else {
+      last;
+    }
+  }
+  return unless $l;
+
+  return $l;
+}
+
 sub write_feat {
   my ( $self, @feats ) = @_;
   my $fh = $self->fh;
@@ -191,7 +201,7 @@ sub write_feat {
   for my $f (@feats) {
     confess "feature is no a Bio::Gonzales::Feat: " . Dumper($f)
       unless ( blessed $f eq 'Bio::Gonzales::Feat' );
-    print $fh _to_gff3( $f, $self->escape_whitespace );
+    print $fh $f->to_gff3( $self->escape_whitespace );
   }
 
   return $self;
@@ -272,7 +282,7 @@ sub write_collected_feats {
     my ( $f, $id ) = @_;
     $sub->( $f, $id ) if ($sub);
     $f->sort_subfeats;
-    print $fh _to_gff3( $f, $escape_whitespace );
+    print $fh $f->to_gff3($escape_whitespace);
     return;
   };
 
@@ -282,52 +292,6 @@ sub write_collected_feats {
   }
   return;
 
-}
-
-sub _to_gff3 {
-  my ( $feat, $escape_whitespace_everywhere ) = @_;
-
-  my $strand = strand_convert($feat->strand);
-
-  my $attributes = $feat->attributes;
-  #sort the attributes
-  my @attr_names = sort { ( $FIXED_ATTRIBUTE_NAMES{$a} || 98 ) <=> ( $FIXED_ATTRIBUTE_NAMES{$b} || 98 ) }
-    keys %$attributes;
-
-  my @groups;
-  for my $a (@attr_names) {
-    my @escaped_v;
-    for my $v ( @{ $attributes->{$a} } ) {
-      unless ( defined($v) ) {
-        carp "The attribute " . $a . " of feature " . $feat->id . " has uninitialized values";
-        $v = '';
-      }
-
-      $v =~ s/$ATTR_ESCAPE_RE/sprintf("%%%02X",ord($1))/ge;
-      $v =~ s/ /%20/g if ( $escape_whitespace_everywhere && $a ne 'Target' );
-      push @escaped_v, $v;
-    }
-
-    if ( $a eq 'Target' ) {
-      for my $v (@escaped_v) {
-        if ( $v =~ /^"?(.*?)\s+(\d+\s+\d+(?:\s+[-.+])?)\s*"?$/ ) {
-          my ( $tid, $rest ) = ( $1, $2 );
-          $tid =~ s/ /%20/g;
-          $v = join " ", $tid, $rest;
-        }
-      }
-    }
-
-    $a =~ s/$ATTR_ESCAPE_RE/sprintf("%%%02X",ord($1))/ge;
-
-    push @groups, $a . '=' . join( ',', @escaped_v );
-  }
-
-  return join( "\t",
-    $feat->seq_id, $feat->source, $feat->type,
-    $feat->start,  $feat->end,    $feat->score // '.',
-    $strand, $feat->phase // '.', join( ';', @groups ) )
-    . "\n";
 }
 
 1;
