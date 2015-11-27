@@ -224,6 +224,11 @@ sub revcom {
   return $self;
 }
 
+sub revcom_seq {
+  my $self = shift;
+  return _revcom_from_string( $self->seq, $self->guess_alphabet );
+}
+
 sub subseq {
   my ( $self, $range, $c ) = @_;
 
