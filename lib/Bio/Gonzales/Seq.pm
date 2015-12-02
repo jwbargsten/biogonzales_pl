@@ -25,10 +25,7 @@ sub _build_gaps {
   return $gaps;
 }
 
-sub ungapped_seq {
-  (my $seq = shift->seq) =~ tr/-.//d;
-  return $seq;
-}
+sub ungapped_seq { return shift->gapless_seq(@_); }
 
 sub _build_length {
   return CORE::length( shift->seq() );
@@ -108,10 +105,7 @@ around 'seq' => sub {
 };
 
 sub gapless_seq {
-  my ($self) = @_;
-
-  my $seq = $self->seq;
-  $seq =~ tr/-.//d;
+  (my $seq = shift->seq) =~ tr/-.//d;
   return $seq;
 }
 
