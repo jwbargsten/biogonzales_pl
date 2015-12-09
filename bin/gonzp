@@ -23,7 +23,6 @@ our @STD_PROJECT_DIRS = qw(
   doc
   data
   analysis
-  paper
 );
 
 our @REQUIRED_PROJECT_DIRS = qw(
@@ -63,7 +62,7 @@ if ( $cmd =~ /^i(nit)?/ ) {
 
   say STDERR "Creating Makefile";
   open my $make_fh, '>', "Makefile" or confess "Can't open filehandle: $!";
-  say $make_fh ".PHONY: all clean test paper\n";
+  say $make_fh ".PHONY: all clean test doc\n";
   $make_fh->close;
 
   create_readme( '.', $name, $date );
