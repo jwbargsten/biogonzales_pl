@@ -156,7 +156,11 @@ sub validate {
       $self->_add_error( $., " ERROR IN THE SCRIPT" );
     }
   }
-  return $self->_error_cache;
+  if ( keys %{ $self->_error_cache } > 0 ) {
+    return $self->_error_cache;
+  } else {
+    return;
+  }
 }
 
 sub _add_error {
