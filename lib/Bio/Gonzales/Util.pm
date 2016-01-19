@@ -6,13 +6,15 @@ use warnings;
 use strict;
 use Carp;
 
+use String::ShellQuote;
+
 use base 'Exporter';
 our ( @EXPORT, @EXPORT_OK, %EXPORT_TAGS );
 # VERSION
 
 @EXPORT      = qw();
 %EXPORT_TAGS = ();
-@EXPORT_OK   = qw(undef_slice slice invslice flatten hash_merge as_arrayref);
+@EXPORT_OK   = qw(undef_slice slice invslice flatten hash_merge as_arrayref sys_pipe);
 
 sub slice {
   my ( $hr, @k ) = @_;
@@ -96,6 +98,22 @@ sub as_arrayref {
   } else {
     return $item;
   }
+}
+
+sub sys_pipe {
+  my $cmd;
+
+  for my $e (@_) {
+    if ( ref $e eq 'ARRAY' ) {
+      $cmd .= shell_quote(@$e) . " ";
+    } elsif ( $e =~ /^>>|\d?>|<|<<|\||\d?>\&\d$/ ) {
+      $cmd .= $e . " ";
+    } else {
+      $cmd .= shell_quote($e) . " ";
+    }
+  }
+  chomp $cmd;
+  system($cmd) == 0 or confess "system failed: $?\n$cmd";
 }
 
 1;
