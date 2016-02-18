@@ -142,7 +142,6 @@ sub mslurp {
 
   my ( $fh, $fh_was_open ) = open_on_demand( $src, '<' );
 
-
   $cc //= {};
   my %c = (
     sep              => qr/\t/,
@@ -156,12 +155,11 @@ sub mslurp {
     %$cc
   );
 
-  my $csv = Text::CSV_XS->new( {binary => 1, sep_char => $c{sep}, auto_diag => 1 } );
   my $record_filter = $c{record_filter};
 
   my @col_idx;
   @col_idx = @{ $c{col_idx} } if ( $c{col_idx} && ref $c{col_idx} eq 'ARRAY' );
-  my $header;
+  my @header;
   my @row_names;
 
   if ( $c{header} ) {
@@ -174,7 +172,9 @@ sub mslurp {
         }
       }
 
-      $header = $csv->parse($raw_row);
+      $raw_row =~ s/\r\n/\n/;
+      chomp $raw_row;
+      @header = split /$c{sep}/, $raw_row;
       last;
     }
   }
@@ -183,23 +183,25 @@ sub mslurp {
   while (<$fh>) {
     next if ( $lnum++ <= $c{skip} );
     next if ( $c{comment} && /$c{comment}/ );
+    s/\r\n/\n/;
+    chomp;
     next if (/^\s*$/);
 
     next if ( $record_filter && !$record_filter->($_) );
 
-    my $row = $csv->parse($_);
+    my @row = split /$c{sep}/;
 
-    push @row_names, shift @$row if ( $c{row_names} );
+    push @row_names, shift @row if ( $c{row_names} );
 
-    push @m, ( @col_idx ? [ @{$row}[@col_idx] ] : $row );
+    push @m, ( @col_idx ? [ @row[@col_idx] ] : \@row );
   }
   $fh->close unless ($fh_was_open);
 
   #remove first empty element of a header if same number of elements as first matrix element.
-  shift @$header if ( $c{row_names} && $c{header} && @m > 0 && @{ $m[0] } == @$header && !$header->[0] );
+  shift @header if ( $c{row_names} && $c{header} && @m > 0 && @{ $m[0] } == @header && !$header[0] );
 
   if (wantarray) {
-    return ( \@m, ( $header ? $header : undef ), ( @row_names ? \@row_names : undef ) );
+    return ( \@m, ( @header ? \@header : undef ), ( @row_names ? \@row_names : undef ) );
   } else {
     return \@m;
   }
