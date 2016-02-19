@@ -16,12 +16,12 @@ our $VERSION = 0.01_01;
 
 sub common_suffix {
   my $comm = shift @_;
-  while ( $_ = shift @_ ) {
-    $_ = substr( $_, -length($comm) )
-      if ( length($_) > length($comm) );
-    $comm = substr( $comm, -length($_) )
-      if ( length($_) < length($comm) );
-    if ( ( $_ ^ $comm ) =~ /(\0*)$/ ) {
+  while ( my $e = shift @_ ) {
+    $e = substr( $e, -length($comm) )
+      if ( length($e) > length($comm) );
+    $comm = substr( $comm, -length($e) )
+      if ( length($e) < length($comm) );
+    if ( ( $e ^ $comm ) =~ /(\0*)$/ ) {
       $comm = substr( $comm, -length($1) );
     } else {
       return undef;
@@ -32,12 +32,12 @@ sub common_suffix {
 
 sub common_prefix {
   my $comm = shift @_;
-  while ( $_ = shift @_ ) {
-    $_ = substr( $_, 0, length($comm) )
-      if ( length($_) > length($comm) );
-    $comm = substr( $comm, 0, length($_) )
-      if ( length($_) < length($comm) );
-    if ( ( $_ ^ $comm ) =~ /^(\0*)/ ) {
+  while ( my $e = shift @_ ) {
+    $e = substr( $e, 0, length($comm) )
+      if ( length($e) > length($comm) );
+    $comm = substr( $comm, 0, length($e) )
+      if ( length($e) < length($comm) );
+    if ( ( $e ^ $comm ) =~ /^(\0*)/ ) {
       $comm = substr( $comm, 0, length($1) );
     } else {
       return undef;
