@@ -26,8 +26,8 @@ my $COMMENT_RE = qr/^\s*#/;
 
 sub dict_slurp {
   my ( $src, $cc ) = @_;
-  croak "you have not specified key_idx and val_idx"
-    unless ( $cc && exists( $cc->{key_idx} ) && exists( $cc->{val_idx} ) );
+  croak "you have not specified key_idx"
+    unless ( $cc && exists( $cc->{key_idx} ) );
 
   $cc //= {};
   my %c = (
