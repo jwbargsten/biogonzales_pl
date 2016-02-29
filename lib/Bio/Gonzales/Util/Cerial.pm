@@ -15,44 +15,45 @@ our ( @EXPORT, @EXPORT_OK, %EXPORT_TAGS );
 # VERSION
 
 @EXPORT = qw(
-    ythaw yfreeze yslurp yspew
-    jthaw jfreeze jslurp jspew
+  ythaw yfreeze yslurp yspew
+  jthaw jfreeze jslurp jspew
 );
 
 BEGIN {
-    *yfreeze = \&YAML::XS::Dump;
-    *ythaw   = \&YAML::XS::Load;
-    #*jfreeze = \&JSON::XS::encode_json;
-    *jthaw = \&JSON::XS::decode_json;
+  *yfreeze = \&YAML::XS::Dump;
+  *ythaw   = \&YAML::XS::Load;
+  #*jfreeze = \&JSON::XS::encode_json;
+  *jthaw = \&JSON::XS::decode_json;
 }
 
+our $JSON = JSON::XS->new->indent(1)->utf8->allow_nonref;
+
 sub jfreeze {
-  state $js = JSON::XS->new->indent(1)->utf8->allow_nonref;
-  return $js->encode(@_);
+  return $JSON->encode(@_);
 }
 
 sub _spew {
-    my $dest = shift;
-    my $data = shift;
+  my $dest = shift;
+  my $data = shift;
 
-    my ( $fh, $was_open ) = open_on_demand( $dest, '>' );
-    binmode $fh, ':utf8' unless(ref $fh eq 'IO::Zlib');
-    local $/ = "\n";
+  my ( $fh, $was_open ) = open_on_demand( $dest, '>' );
+  binmode $fh, ':utf8' unless ( ref $fh eq 'IO::Zlib' );
+  local $/ = "\n";
 
-    print $fh $data;
-    $fh->close unless $was_open;
+  print $fh $data;
+  $fh->close unless $was_open;
 }
 
 sub _slurp {
-    my $src = shift;
-    my ( $fh, $was_open ) = open_on_demand( $src, '<' );
-    binmode $fh, ':utf8' unless(ref $fh eq 'IO::Zlib');
-    local $/ = "\n";
+  my $src = shift;
+  my ( $fh, $was_open ) = open_on_demand( $src, '<' );
+  binmode $fh, ':utf8' unless ( ref $fh eq 'IO::Zlib' );
+  local $/ = "\n";
 
-    my $data = do { local $/; <$fh> };
+  my $data = do { local $/; <$fh> };
 
-    $fh->close unless $was_open;
-    return $data;
+  $fh->close unless $was_open;
+  return $data;
 }
 
 sub yslurp { return ythaw( _slurp(shift) ) }
