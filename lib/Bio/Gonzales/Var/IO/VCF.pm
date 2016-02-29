@@ -113,7 +113,7 @@ sub next_var {
     seq_id    => $chr,
     pos       => $pos + 0,
     var_id    => $id,
-    alleles   => [ grep { $_ ne '.' } ( $ref, split( /,/, $alt ) ) ],
+    alleles   => [ $ref, split( /,/, $alt ) ],
     qual      => $qual,
     filter    => $filter,
     info      => $info,
