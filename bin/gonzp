@@ -125,6 +125,7 @@ $(info running AV $(ANALYSIS_VERSION))
 export ANALYSIS_VERSION
 
 AV=$(ANALYSIS_VERSION)
+NAME=$(lastword $(subst /, ,$(abspath .)))
 
 all: dir
 
