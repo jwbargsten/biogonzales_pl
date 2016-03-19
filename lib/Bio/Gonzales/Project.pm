@@ -90,6 +90,7 @@ sub _build_config {
   my $conf_f = $self->config_file;
   if ( -f $conf_f ) {
     $conf = yslurp($conf_f);
+  $conf //= {};
 
     confess "configuration file >> $conf_f << is not a hash/dictionary structure"
       if ( ref $conf ne 'HASH' );

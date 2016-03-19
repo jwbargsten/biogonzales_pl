@@ -121,7 +121,7 @@ ifndef ANALYSIS_VERSION
   endif
 endif
 
-$(info running AV $(ANALYSIS_VERSION))
+$(info analysis version: $(ANALYSIS_VERSION))
 export ANALYSIS_VERSION
 
 AV=$(ANALYSIS_VERSION)
@@ -131,6 +131,9 @@ all: dir
 
 dir:
 	@[ -d $(AV) ] || mkdir $(AV)
+
+help:
+	@grep -E '^[a-zA-Z_.-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[1m%-30s\033[0m %s\n", $$1, $$2}'
 
 EOF
   $make_fh->close;
