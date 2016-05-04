@@ -48,7 +48,8 @@ sub error { shift->log( error => @_ ) }
 sub warn  { shift->log( warn  => @_ ) }
 sub fatal { shift->log( fatal => @_ ) }
 
-sub fatal_confess { shift->log(fatal => @_) and confess(@_) }
+sub fatal_confess { shift->log( fatal => @_ ) and confess(@_) }
+sub fatal_die     { shift->log( fatal => @_ ) and die(@_) }
 
 sub format {
   my ( $self, $level, @lines ) = @_;
@@ -75,7 +76,7 @@ sub is_warn  { shift->is_level('warn') }
 
 sub is_level {
   my ( $self, $level ) = @_;
-  croak "level not specified" unless($level);
+  croak "level not specified" unless ($level);
   return $LEVEL->{ lc $level } >= $LEVEL->{ $ENV{GONZALES_LOG_LEVEL} || $self->level };
 }
 
