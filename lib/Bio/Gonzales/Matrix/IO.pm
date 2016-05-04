@@ -40,11 +40,13 @@ sub dict_slurp {
     commented_header => undef,
     concat_keys      => 1,
     sort_keys        => 0,
+    strict        => 0,
     %$cc
   );
 
   $c{header} //= $c{commented_header};
 
+  my $is_strict  = $c{strict};
   my $record_filter = $c{record_filter};
 
   # concatenate keys to a big string
@@ -73,7 +75,7 @@ sub dict_slurp {
           next;
         }
       }
-      $raw_row =~ s/\r\n/\n/;
+      $raw_row =~ s/\r$//;
       chomp $raw_row;
       @header = split /$c{sep}/, $raw_row;
       @header = ref $vidx ? @header[@$vidx] : ( $header[$vidx] ) if ( defined $vidx && $vidx ne 'all' );
@@ -86,7 +88,7 @@ sub dict_slurp {
   while (<$fh>) {
     next if ( $lnum++ <= $c{skip} );
     next if ( $c{comment} && /$c{comment}/ );
-    s/\r\n/\n/;
+    s/\r$//;
     chomp;
     next if (/^\s*$/);
 
@@ -106,6 +108,7 @@ sub dict_slurp {
       } elsif ( not defined $vidx ) {
         $map{$k}++;
       } elsif ($uniq) {
+        confess "strict mode: two times the same key $k" if ( $is_strict && defined( $map{$k} ) );
         $map{$k} = ( ref $vidx ? [ @r[@$vidx] ] : ( $vidx eq 'all' ? \@r : $r[$vidx] ) );
       } else {
         $map{$k} //= [];
@@ -429,7 +432,7 @@ sub xlsx_spew {
 
   my $workbook  = Excel::Writer::XLSX->new($fh);
   my $worksheet = $workbook->add_worksheet();
-  $worksheet->keep_leading_zeros() if($c->{keep_leading_zeros});
+  $worksheet->keep_leading_zeros() if ( $c->{keep_leading_zeros} );
   $worksheet->write_col( 'A1', \@table );
   $workbook->close;
   $fh->close unless ($fh_was_open);
@@ -460,7 +463,7 @@ sub xlsx_slurp {
       my @r;
       for ( my $j = $col_min; $j <= $col_max; $j++ ) {
         my $e = $worksheet->get_cell( $i, $j );
-        push @r, (defined($e) ? $e->unformatted : undef);
+        push @r, ( defined($e) ? $e->unformatted : undef );
       }
       push @w, \@r;
     }
@@ -502,6 +505,7 @@ Provides functions for common matrix/list IO.
     uniq    => 0,
     record_filter => undef,
     concat_keys => 1,
+    strict => 0
   );
 
 Setups:
@@ -521,9 +525,13 @@ Setups:
 Concatenate the keys by C<< $; >>. If set to 0, key columns are taken in a
 serial fashion and are merged to one big column.
 
+=item uniq = 1 && strict = 1 => confess if two times the same key occurs in the data.
+
 =back
 
 If key_idx is an array, the keys columns are joined by C<$;> to build the hash key.
+
+
 
 =item B<< mspew($filename, \@matrix, \%options) >>
 
