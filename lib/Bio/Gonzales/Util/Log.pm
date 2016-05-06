@@ -3,7 +3,7 @@ package Bio::Gonzales::Util::Log;
 # shamelessly stolen from Mojo::Log, thanks to Sebastian Riedel & contributors for creating it.
 use Moo;
 
-use Carp 'croak';
+use Carp qw(croak confess);
 use Fcntl ':flock';
 use POSIX qw/strftime/;
 
@@ -50,6 +50,7 @@ sub fatal { shift->log( fatal => @_ ) }
 
 sub fatal_confess { shift->log( fatal => @_ ) and confess(@_) }
 sub fatal_die     { shift->log( fatal => @_ ) and die(@_) }
+sub fatal_croak   { shift->log( fatal => @_ ) and croak(@_) }
 
 sub format {
   my ( $self, $level, @lines ) = @_;

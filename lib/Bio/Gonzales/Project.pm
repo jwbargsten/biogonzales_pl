@@ -179,16 +179,16 @@ sub conf {
       if ( exists( $data->{$k} ) ) {
         $data = $data->{$k};
       } else {
-        confess "$k not found in gonzconf";
+        $self->log->fatal_confess("$k not found in gonzconf");
       }
     } elsif ( $r && $r eq 'ARRAY' ) {
       if ( exists( $data->[$k] ) ) {
         $data = $data->[$k];
       } else {
-        confess "$k not found in gonzconf";
+        $self->log->fatal_confess("$k not found in gonzconf");
       }
     } else {
-      confess "$k not found in gonzconf";
+      $self->log->fatal_confess("$k not found in gonzconf");
     }
   }
   if (@keys) {
