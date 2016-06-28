@@ -5,8 +5,10 @@ use strict;
 use Carp;
 use Bio::Gonzales::Util::File qw/open_on_demand/;
 
+use Try::Tiny;
 use YAML::XS;
 use JSON::XS;
+use Data::Dumper;
 
 use 5.010;
 
@@ -29,7 +31,14 @@ BEGIN {
 our $JSON = JSON::XS->new->indent(1)->utf8->allow_nonref;
 
 sub jfreeze {
-  return $JSON->encode(@_);
+  my $r;
+  my @d = @_;
+  try {
+  $r = $JSON->encode(@d);
+} catch {
+  confess Dumper \@d;
+};
+
 }
 
 sub _spew {

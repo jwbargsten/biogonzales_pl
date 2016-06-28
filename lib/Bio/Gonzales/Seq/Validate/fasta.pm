@@ -109,7 +109,7 @@ sub validate {
       if (/^>([^\s]+)/) {
         $self->_add_error( $., "ID is very long: " . $self->_shorten_seq($1) )
           if ( length($1) > 50 );
-        $self->_add_error( $., "ID is ambiguous." )
+        $self->_add_error( $., "ID is ambiguous. $1" )
           if ( exists $seen{$1} );
         $seen{$1} = 1;
       } elsif (/^>\s*$/) {
