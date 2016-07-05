@@ -9,6 +9,7 @@ use Try::Tiny;
 use YAML::XS;
 use JSON::XS;
 use Data::Dumper;
+use Storable qw/nstore_fd fd_retrieve/;
 
 use 5.010;
 
@@ -19,6 +20,7 @@ our ( @EXPORT, @EXPORT_OK, %EXPORT_TAGS );
 @EXPORT = qw(
   ythaw yfreeze yslurp yspew
   jthaw jfreeze jslurp jspew
+  stoslurp stospew
 );
 
 BEGIN {
@@ -34,10 +36,11 @@ sub jfreeze {
   my $r;
   my @d = @_;
   try {
-  $r = $JSON->encode(@d);
-} catch {
-  confess Dumper \@d;
-};
+    $r = $JSON->encode(@d);
+  }
+  catch {
+    confess Dumper \@d;
+  };
 
 }
 
@@ -69,6 +72,23 @@ sub yslurp { return ythaw( _slurp(shift) ) }
 sub jslurp { return jthaw( _slurp(shift) ) }
 sub yspew  { my $file = shift; _spew( $file, yfreeze( $_[0] ) ) }
 sub jspew  { my $file = shift; _spew( $file, jfreeze( $_[0] ) ) }
+
+sub stospew {
+  my $dest = shift;
+  my $data = shift;
+
+  my ( $fh, $was_open ) = open_on_demand( $dest, '>' );
+  nstore_fd( $data, $fh );
+  $fh->close unless ($was_open);
+}
+
+sub stoslurp {
+  my $src = shift;
+  my ( $fh, $was_open ) = open_on_demand( $src, '<' );
+  my $data = fd_retrieve($fh);
+  $fh->close unless $was_open;
+  return $data;
+}
 
 __END__
 

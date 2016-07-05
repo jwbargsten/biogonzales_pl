@@ -58,7 +58,7 @@ sub clean {
   my $d = shift;
   for my $x (@$d) {
     for my $y (@$x) {
-      $y =~ y/\r\n//d;
+      $y =~ y/\r\n//d if($y);
     }
   }
 }

@@ -130,8 +130,9 @@ sub write_var {
   $self->_write_header
     unless ( $self->_wrote_sth_before );
 
-  my $ref = ( shift @{ $var->{alleles} } ) // '.';
-  my $alt = @{ $var->{alleles} } > 0 ? join( ",", @{ $var->{alleles} } ) : '.';
+  my ( $ref, @alleles ) = @{ $var->{alleles} };
+  $ref //= '.';
+  my $alt = @alleles > 0 ? join( ",", @alleles ) : '.';
   say $fh join( "\t",
     @{$var}{qw(seq_id pos var_id)},
     $ref, $alt,
