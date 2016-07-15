@@ -33,6 +33,13 @@ has 'config'           => ( is => 'rw', lazy_build => 1 );
 has 'merge_av_config'  => ( is => 'rw', default    => 1 );
 has 'log'              => ( is => 'rw', builder    => '_build_log' );
 has 'config_file'      => ( is => 'rw', default    => 'gonz.conf.yml' );
+has 'analysis_name' => (is => 'rw', lazy_build => 1);
+
+sub _build_analysis_name {
+  my ($self) = @_;
+
+  return (File::Spec->splitdir(File::Spec->rel2abs('.')))[-1]
+}
 
 sub _build_analysis_version {
   my ($self) = @_;
@@ -53,6 +60,7 @@ sub _build__substitute_conf {
   my ($self) = @_;
 
   my %subs = (
+    an      => sub { return $self->analysis_name },
     av      => sub { return $self->analysis_version },
     path_to => sub { return $self->path_to(@_) },
     data    => sub { return $self->path_to('data') },

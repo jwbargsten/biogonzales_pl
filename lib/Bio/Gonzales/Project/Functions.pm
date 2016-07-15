@@ -17,7 +17,7 @@ our ( @EXPORT, @EXPORT_OK, %EXPORT_TAGS );
 # VERSION
 
 @EXPORT
-  = qw(catfile nfi analysis_version path_to analysis_path gonzlog gonzconf iof gonzc gonzl gonz_iterate gonzsys);
+  = qw(catfile nfi analysis_version path_to analysis_path gonzlog gonzconf iof gonzc gonzl gonz_iterate gonzsys analysis_name);
 %EXPORT_TAGS = ();
 @EXPORT_OK   = qw();
 
@@ -27,16 +27,18 @@ sub _bgp {
 
 sub analysis_version { _bgp->analysis_version(@_) }
 sub path_to          { _bgp->path_to(@_) }
-sub gonzlog          { confess "deprecated call syntax, use gonzlog->info" if(@_ > 0 && $_[0]); _bgp->log() }
-sub gonzl            { confess "deprecated call syntax, use gonzl->info" if(@_ > 0 && $_[0]); _bgp->log() }
 sub nfi              { _bgp->nfi(@_) }
 sub iof              { _bgp->conf(@_) }
 sub gonzconf         { _bgp->conf(@_) }
 sub gonzc            { _bgp->conf(@_) }
 sub analysis_path    { _bgp->analysis_path(@_) }
+sub analysis_name    { _bgp->analysis_name(@_) }
+
+sub gonzlog { confess "deprecated call syntax, use gonzlog->info" if ( @_ > 0 && $_[0] ); _bgp->log() }
+sub gonzl   { confess "deprecated call syntax, use gonzl->info"   if ( @_ > 0 && $_[0] ); _bgp->log() }
 
 sub gonzsys {
-  _bgp->log->info("(exec) > " . join(" ", @_ ). " <");
+  _bgp->log->info( "(exec) > " . join( " ", @_ ) . " <" );
   system(@_) == 0 or confess "system failed: $?";
 }
 

@@ -28,7 +28,7 @@ unless ($prefix) {
 
 my $d = xlsx_slurp($in_f);
 
-if ( $opt{'index'} > 0 && @$d >= $opt{'index'} ) {
+if ( $opt{index} && $opt{'index'} > 0 && @$d >= $opt{'index'} ) {
   say STDERR "out pattern: $prefix$opt{suffix}";
   my $idx      = $opt{index} - 1;
   my $res_file = $prefix . $opt{suffix};
