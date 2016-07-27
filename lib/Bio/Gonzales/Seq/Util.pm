@@ -6,6 +6,9 @@ use Carp;
 
 use Scalar::Util qw/blessed/;
 use Data::Dumper;
+use Bio::Gonzales::Matrix::IO;
+use File::Which qw/which/;
+use Bio::Gonzales::Seq::IO;
 
 use base 'Exporter';
 our ( @EXPORT, @EXPORT_OK, %EXPORT_TAGS );
@@ -23,6 +26,8 @@ our ( @EXPORT, @EXPORT_OK, %EXPORT_TAGS );
   seqid_mapper
   crc64
   strand_convert
+  seq_lengths
+  seq_apply
 );
 
 our %STRAND_CHAR_TABLE = (
@@ -34,12 +39,71 @@ our %STRAND_CHAR_TABLE = (
   0   => '.',
 );
 
+our $BLASTDB_CMD  = which('blastdbcmd');
+our $SAMTOOLS_CMD = which('samtools');
+
 sub strand_convert {
   if ( @_ && @_ > 0 && $_[-1] && exists( $STRAND_CHAR_TABLE{ $_[-1] } ) ) {
     return $STRAND_CHAR_TABLE{ $_[-1] };
   } else {
     return '.';
   }
+}
+
+sub seq_lengths {
+  my $f = shift;
+
+  my $d;
+  if ( -f $f . ".fai" ) {
+    $d = mslurp( $f . ".fai", { header => undef } );
+  } elsif ( -f $f . ".nhr" ) {
+    open my $fh, '-|', $BLASTDB_CMD, '-db', $f, '-entry', 'all', '-outfmt', "%a\t%l"
+      or die "Can't open filehandle: $!";
+    $d = mslurp( $fh, { header => undef } );
+    close $fh;
+  } elsif ($SAMTOOLS_CMD) {
+    system( 'samtools', 'faidx', $f ) == 0 or die "system failed: $?";
+    $d = mslurp( $f . ".fai", { header => undef } ) if ( -f $f . ".fai" );
+  }
+
+  # nothing worked so far
+  unless ($d) {
+    say STDERR "could not use samtools or blast indices, using std method";
+    my @lengths;
+    my $fit = faiterate($f);
+    while ( my $seq = $fit->() ) {
+      push @lengths, [ $seq->id, $seq->length ];
+    }
+    $d = \@lengths;
+  }
+
+  my %sl;
+  for my $r (@$d) {
+    die "double ID" if ( $sl{ $r->[0] } );
+    $sl{ $r->[0] } = $r->[1];
+  }
+
+  return \%sl;
+}
+
+sub seq_apply {
+  my ( $f, $sub, $pattern ) = @_;
+
+  die "file or sub ref not correct" unless ( ref $sub eq 'CODE' && -f $f );
+  my $seq_lengths = seq_lengths($f);
+  my @res;
+  my $num = keys %$seq_lengths;
+  for my $sid ( keys %$seq_lengths ) {
+    my $spat;
+    if ($pattern) {
+      $spat = $pattern;
+      $spat =~ s/\{id\}/$sid/g;
+      $spat =~ s/\{begin\}/1/g;
+      $spat =~ s/\{end\}/$seq_lengths->{$sid}/g;
+    }
+    push @res, $sub->( { id => $sid, begin => 1, end => $seq_lengths->{$sid}, num => $num }, $spat );
+  }
+  return \@res;
 }
 
 sub pairwise_identity_l {
