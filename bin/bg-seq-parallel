@@ -12,12 +12,25 @@ use Pod::Usage;
 use Getopt::Long;
 
 my %opt = ( processes => 4 );
-GetOptions( \%opt, 'help', 'processes|p=i' ) or pod2usage(2);
+GetOptions( \%opt, 'help', 'processes|p=i', 'tasks|t=s' ) or pod2usage(2);
 
 pod2usage( -exitval => 0, -verbose => 2 ) if ( $opt{help} );
 
 my $ref_f = shift @ARGV;
 my $cmd = join( " ", @ARGV );
+
+my %tasks;
+
+if($opt{tasks}) {
+  for my $tr (split(/,/, $opt{tasks})) {
+    my @range = split /\.\.|-/, $tr;
+    die "invalid task range $tr" if(@range > 2);
+
+    @range = reverse @range if(@range == 2 && $range[0] > $range[1]);
+    $range[1] = $range[0] if(@range == 1);
+    map { $tasks{$_}++ } $range[0] .. $range[1];
+  }
+}
 
 my $pm = Parallel::ForkManager->new( $opt{processes} );
 
@@ -28,6 +41,8 @@ seq_apply(
     my ( $info, $scmd ) = @_;
 
     $seq_num++;
+    return if(%tasks && !$tasks{$seq_num});
+
     my $pid = $pm->start and return;
 
     $scmd =~ s/\{seq_num\}/$seq_num/;
@@ -37,7 +52,7 @@ seq_apply(
     my $seq_num_fmt = sprintf( "%0${num_digits}d", $seq_num );
     $scmd =~ s/\{seq_fn\}/$seq_num_fmt.$seq_id/;
 
-    say STDERR "[$$] running $scmd";
+    say STDERR "[$$] $seq_num: running $scmd";
     system($scmd) == 0 or die "system failed: $?";
     $pm->finish;
   },
