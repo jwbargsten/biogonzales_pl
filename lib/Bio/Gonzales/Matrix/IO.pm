@@ -4,7 +4,7 @@ use warnings;
 use strict;
 use Carp;
 use Data::Dumper;
-use List::MoreUtils qw/uniq/;
+use List::MoreUtils qw/uniq zip/;
 use Bio::Gonzales::Util qw/flatten/;
 use Text::CSV_XS qw/csv/;
 
@@ -19,7 +19,7 @@ use base 'Exporter';
 our ( @EXPORT, @EXPORT_OK, %EXPORT_TAGS );
 # VERSION
 
-@EXPORT      = qw(mslurp mspew lslurp miterate lspew dict_slurp dict_spew xcsv_slurp);
+@EXPORT      = qw(mslurp mspew lslurp miterate lspew dict_slurp dict_spew xcsv_slurp miterate_hash);
 %EXPORT_TAGS = ();
 @EXPORT_OK   = qw(lspew xlsx_slurp xlsx_spew);
 my $COMMENT_RE = qr/^\s*#/;
@@ -40,13 +40,13 @@ sub dict_slurp {
     commented_header => undef,
     concat_keys      => 1,
     sort_keys        => 0,
-    strict        => 0,
+    strict           => 0,
     %$cc
   );
 
   $c{header} //= $c{commented_header};
 
-  my $is_strict  = $c{strict};
+  my $is_strict     = $c{strict};
   my $record_filter = $c{record_filter};
 
   # concatenate keys to a big string
@@ -268,6 +268,28 @@ sub miterate {
     $fh->close unless ($fh_was_open);
     return;
   };
+}
+
+sub miterate_hash {
+  my $mit = miterate(@_);
+
+  my $header = $mit->();
+
+  return sub {
+    my ( $from_idx, $to_idx ) = @_;
+
+    my $row = $mit->();
+    return unless ($row);
+
+    if ( defined($from_idx) && defined($to_idx) ) {
+      my @h = @{$header}[ $from_idx .. $to_idx ];
+      my @r = @{$row}[ $from_idx .. $to_idx ];
+      return { zip @h, @r };
+    } else {
+      return { zip @$header, @$row };
+    }
+
+  }, $header;
 }
 
 sub lspew {
