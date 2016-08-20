@@ -90,6 +90,7 @@ sub log {
 
   _print( $handle, $msg );
   _print( \*STDERR, $msg ) if ( $self->tee_stderr );
+  return $self;
 }
 
 sub _print {
