@@ -9,10 +9,12 @@ use 5.010;
 use base 'Exporter';
 use Bio::Gonzales::Util::File qw/basename regex_glob is_archive/;
 use List::Util qw/min max/;
-use File::Temp qw/tempdir tempfile/;
+use File::Temp qw/tempdir tempfile mktemp/;
 use Bio::Gonzales::Seq::IO qw(faiterate faspew);
 use Capture::Tiny qw/capture_merged/;
 use Path::Tiny;
+use File::Spec::Functions qw/catfile/;
+use String::ShellQuote;
 
 use Params::Validate qw/validate/;
 our ( @EXPORT, @EXPORT_OK, %EXPORT_TAGS );
@@ -36,25 +38,30 @@ sub makeblastdb {
     }
   );
 
-  $c{wd} //= './';
+  $c{wd} ||= './';
   my $unlink;
-  my $seqf = $c{seq_file};
+  my $seqf     = shell_quote( $c{seq_file} );
   my $basename = basename( $c{seq_file} );
-  if ( is_archive($seqf) ) {
+  if ( my $type = is_archive($seqf) ) {
     say STDERR "$seqf is an archive, extracting first ...";
-    my $fait = faiterate($seqf);
-    my ( $fh, $fn ) = tempfile('tempXXXXX', DIR => $c{wd} );
-    while ( my $s = $fait->() ) {
-      faspew( $fh, $s );
+
+    my $tmp_f = mktemp( catfile( $c{wd}, 'tempXXXXXX' ) );
+
+    if ( $type eq 'gz' ) {
+      system("pigz -dc $seqf >$tmp_f") == 0 or die "system failed: $?";
+    } elsif ( $type eq 'bz2' ) {
+      system("bzip2 -dc $seqf >$tmp_f") == 0 or die "system failed: $?";
+    } else {
+      confess("archive type $type not supported");
     }
-    $fh->close;
+
     $unlink = 1;
-    $seqf   = $fn;
+    $seqf   = $tmp_f;
     say STDERR "extraction finished. making blast DB";
-    $basename = basename($basename); # remove 2nd extension, e.g. a.fa.gz -> a.fa -> a
+    $basename = basename($basename);    # remove 2nd extension, e.g. a.fa.gz -> a.fa -> a
   }
 
-  my @cmd      = 'makeblastdb';
+  my @cmd = 'makeblastdb';
   push @cmd, '-in',    $seqf;
   push @cmd, '-title', $basename;
   push @cmd, '-parse_seqids' if ( $c{parse_seqids} );
@@ -87,7 +94,6 @@ sub makeblastdb {
   my $merged = capture_merged { system @cmd };
 
   say STDERR $merged;
-
 
   unlink $seqf if ($unlink);
   return $db_name;

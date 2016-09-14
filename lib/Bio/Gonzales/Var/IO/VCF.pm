@@ -32,7 +32,7 @@ sub format_header {
   my $res = '';
 
   my $meta = $self->meta;
-  $res .= "##fileformat=" . ( $meta->{fileformat}[0] // 'VCF4.2' ) . "\n";
+  $res .= "##fileformat=" . ( $meta->{fileformat}[0] // 'VCFv4.2' ) . "\n";
   for my $kw (qw/FILTER FORMAT INFO/) {
     next unless ( $meta->{$kw} && @{ $meta->{$kw} } > 0 );
     for my $v ( @{ $meta->{$kw} } ) {

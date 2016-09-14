@@ -78,7 +78,7 @@ sub validate {
   my %seen;
 
   while (<$fh>) {
-    if ( $. == 1 && /\r\n/ ) {
+    if ( !$is_dos && /\r\n/ ) {
       $is_dos = 1;
       $self->_add_error( 0, "File seems to be in DOS format" );
     }

@@ -108,8 +108,10 @@ sub sys_fmt {
       $cmd .= shell_quote(@$e) . " ";
     } elsif ( $e =~ /^>>|\d?>|<|<<|\||\d?>\&\d$/ ) {
       $cmd .= $e . " ";
-    } else {
+    } elsif(defined $e) {
       $cmd .= shell_quote($e) . " ";
+    } else {
+      next;
     }
   }
   chomp $cmd;
