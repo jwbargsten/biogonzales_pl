@@ -91,7 +91,7 @@ sub makeblastdb {
   say STDERR "Creating blast db:";
   say STDERR join " ", @cmd;
 
-  my $merged = capture_merged { system(@cmd) or die "system failed: $?" };
+  my $merged = capture_merged { system(@cmd) };
 
   say STDERR $merged;
 
