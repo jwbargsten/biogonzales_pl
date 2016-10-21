@@ -48,7 +48,7 @@ sub makeblastdb {
     my $tmp_f = mktemp( catfile( $c{wd}, 'tempXXXXXX' ) );
 
     if ( $type eq 'gz' ) {
-      system("pigz -dc $seqf >$tmp_f") == 0 or die "system failed: $?";
+      system("gzip -dc $seqf >$tmp_f") == 0 or die "system failed: $?";
     } elsif ( $type eq 'bz2' ) {
       system("bzip2 -dc $seqf >$tmp_f") == 0 or die "system failed: $?";
     } else {
@@ -75,7 +75,7 @@ sub makeblastdb {
   my $db_name = File::Spec->catfile( $c{wd}, $c{db_prefix} );
   push @cmd, '-out', $db_name;
 
-  my @existing_db_files = regex_glob( $c{wd}, qr/^\Q$c{db_prefix}.\En\w\w$/ );
+  my @existing_db_files = regex_glob( $c{wd}, qr/^\Q$c{db_prefix}.\E[np]\w\w$/ );
   if ( @existing_db_files > 0 ) {
     my $oldest_db_file_age = min( map { ( stat $_ )[9] } @existing_db_files );
     my $seq_file_age = ( stat $c{seq_file} )[9];
@@ -91,7 +91,7 @@ sub makeblastdb {
   say STDERR "Creating blast db:";
   say STDERR join " ", @cmd;
 
-  my $merged = capture_merged { system @cmd };
+  my $merged = capture_merged { system(@cmd) or die "system failed: $?" };
 
   say STDERR $merged;
 
