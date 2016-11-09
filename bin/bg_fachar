@@ -12,6 +12,9 @@ use 5.010;
 use Bio::Gonzales::Util::Text qw/ccount_iter/;
 
 use Bio::Gonzales::Seq::IO qw/faiterate/;
+use JSON::XS;
+use List::Util qw/sum/;
+my $js = JSON::XS->new->utf8->allow_nonref->canonical(1);
 
 use Getopt::Long::Descriptive;
 use Thread::Task::Concurrent qw(tmsg);
@@ -20,6 +23,7 @@ my ( $opt, $usage ) = describe_options(
   '%c %o <file>', [],
   [ 'threads|t=i', "use threads", { default => 1 } ],
   [ 'help',        "print usage message and exit" ],
+  [ 'by_seq',        "print counts by sequence" ],
 );
 
 print( $usage->text ), exit if $opt->help;
@@ -33,12 +37,15 @@ my $tq = Thread::Task::Concurrent->new( task => \&task, max_instances => $opt->t
 my $iterator = faiterate($file);
 
 while ( my $s = $iterator->() ) {
-  $tq->enqueue( $s->seq );
+  $tq->enqueue( [$s->id, $s->seq] );
 }
 my $res = $tq->join->result;
 
 my %counts;
-for my $counts_by_seq (@$res) {
+for my $r (@$res) {
+  my ($id, $counts_by_seq) = @$r;
+  my $total = sum values %$counts_by_seq;
+  say $js->encode({$id => { '_' => $total, %$counts_by_seq}}) if($opt->by_seq);
   while ( my ( $c, $count ) = each %$counts_by_seq ) {
     $counts{$c} += $count;
   }
@@ -52,8 +59,8 @@ for my $k (@chars) {
 say "    _total_ => $total";
 
 sub task {
+  my ($id, $seq) = @{$_[0]};
   my $counter = ccount_iter();
-  my $seq     = shift;
-  return ccount_iter()->($seq);
+  return [$id, ccount_iter()->($seq) ];
 }
 
