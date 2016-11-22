@@ -13,6 +13,8 @@ use IO::Uncompress::Bunzip2 qw($Bunzip2Error);
 use File::Which qw/which/;
 use Bio::Gonzales::Util::IO::Compressed;
 
+use constant BG_MAGIC => "\037\213\010\4\0\0\0\0\0\377\6\0\102\103\2\0\0\0";
+
 our %ZMODES = (
   '>'  => 'wb',
   '>>' => 'ab',
@@ -28,7 +30,7 @@ our $EXTERNAL_BZIP2 = which('bzip2');
 @EXPORT      = qw(glob_regex epath bname openod spath);
 %EXPORT_TAGS = ();
 @EXPORT_OK
-  = qw(expand_path slurpc basename regex_glob open_on_demand is_newer splitpath %ZMODES is_archive expand_home gonzopen);
+  = qw(expand_path slurpc basename regex_glob open_on_demand is_newer splitpath %ZMODES is_archive expand_home gonzopen gz_type);
 
 sub epath { expand_path(@_) }
 
@@ -210,6 +212,25 @@ sub is_fh {
   return 1 if ( $reftype && ( $reftype eq 'IO' or $reftype eq 'GLOB' && *{$fh}{IO} ) );
 
   return;
+}
+
+sub gz_type {
+  my $f = shift;
+
+  open my $fh, '<', $f or die "Can't open filehandle: $!";
+  binmode $fh;
+  my $size = length(BG_MAGIC);
+  my $nread = read( $fh, my $buffer, $size );
+  close $fh;
+  return unless ( $nread == $size );
+
+  if ( unpack( 'H16', $buffer ) eq unpack( 'H16', BG_MAGIC ) ) {
+    return 'bgzf';
+  } elsif ( unpack( 'H2', $buffer ) eq unpack( 'H2', BG_MAGIC ) ) {
+    return 'gzip';
+  } else {
+    return;
+  }
 }
 
 1;
