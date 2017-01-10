@@ -126,7 +126,7 @@ sub open_on_demand {
     $fh_was_open = 1;
   } elsif ( !ref($src) ) {
     $src = expand_home($src);
-    if ( $src =~ /.+?\.gz$/i ) {
+    if ( $src =~ /.+?\.b?gz$/i ) {
       if ($EXTERNAL_GZ) {
         $fh = _pipe_z( $EXTERNAL_GZ, $src, $mode );
       } else {
@@ -185,7 +185,7 @@ sub _pipe_z {
 sub is_archive {
   my $f = shift;
 
-  if ( $f =~ /.+?\.gz$/i ) {
+  if ( $f =~ /.+?\.b?gz$/i ) {
     return 'gz';
   } elsif ( $f =~ /.+?\.bz2$/i ) {
     return 'bz2';
