@@ -49,7 +49,7 @@ sub next_seq {
 
   my $fhi = $self->_fhi;
   my $def = $fhi->();
-  unless ($def) {
+  unless (defined $def) {
     $self->close;
     return;
   }
