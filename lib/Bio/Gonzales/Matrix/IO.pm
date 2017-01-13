@@ -77,7 +77,7 @@ sub dict_slurp {
       }
       $raw_row =~ s/\r$//;
       chomp $raw_row;
-      @header = split /$c{sep}/, $raw_row;
+      @header = split /$c{sep}/, $raw_row, -1;
       @header = ref $vidx ? @header[@$vidx] : ( $header[$vidx] ) if ( defined $vidx && $vidx ne 'all' );
       last;
     }
@@ -94,7 +94,7 @@ sub dict_slurp {
 
     next if ( $record_filter && !$record_filter->($_) );
 
-    my @r = split /$c{sep}/;
+    my @r = split /$c{sep}/, -1;
 
     for my $kidx (@kidcs) {
 
@@ -177,7 +177,7 @@ sub mslurp {
 
       $raw_row =~ s/\r\n/\n/;
       chomp $raw_row;
-      @header = split /$c{sep}/, $raw_row;
+      @header = split /$c{sep}/, $raw_row, -1;
       last;
     }
   }
@@ -192,9 +192,10 @@ sub mslurp {
 
     next if ( $record_filter && !$record_filter->($_) );
 
-    my @row = split /$c{sep}/;
+    my @row = split /$c{sep}/, $_, -1;
 
     push @row_names, shift @row if ( $c{row_names} );
+    @row = map { $_ eq $c{na_value} ? undef : $_ } @row if($c{na_value});
 
     push @m, ( @col_idx ? [ @row[@col_idx] ] : \@row );
   }
@@ -261,7 +262,7 @@ sub miterate {
       next if (/^\s*$/);
       next if ( $record_filter && !$record_filter->($_) );
 
-      my @row = split /$c{sep}/;
+      my @row = split /$c{sep}/, $_, -1;
       return \@row;
 
     }
