@@ -94,7 +94,7 @@ sub dict_slurp {
 
     next if ( $record_filter && !$record_filter->($_) );
 
-    my @r = split /$c{sep}/, -1;
+    my @r = split /$c{sep}/, $_, -1;
 
     for my $kidx (@kidcs) {
 
