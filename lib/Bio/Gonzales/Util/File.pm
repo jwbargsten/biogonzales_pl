@@ -126,7 +126,7 @@ sub open_on_demand {
     $fh_was_open = 1;
   } elsif ( !ref($src) ) {
     $src = expand_home($src);
-    if ( $src =~ /.+?\.b?gz$/i ) {
+    if ( $src =~ /.+?\.b?gz$/i || gz_type($src) ) {
       if ($EXTERNAL_GZ) {
         $fh = _pipe_z( $EXTERNAL_GZ, $src, $mode );
       } else {
