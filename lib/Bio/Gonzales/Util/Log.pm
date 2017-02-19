@@ -52,6 +52,10 @@ sub fatal_confess { shift->log( fatal => @_ ) and confess(@_) }
 sub fatal_die     { shift->log( fatal => @_ ) and die(@_) }
 sub fatal_croak   { shift->log( fatal => @_ ) and croak(@_) }
 
+sub fatal_confess_silent { shift->log( fatal => @_ ) and confess }
+sub fatal_die_silent     { shift->log( fatal => @_ ) and die }
+sub fatal_croak_silent   { shift->log( fatal => @_ ) and croak }
+
 sub format {
   my ( $self, $level, @lines ) = @_;
 

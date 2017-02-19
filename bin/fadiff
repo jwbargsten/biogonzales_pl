@@ -19,7 +19,7 @@ my ( $opt, $usage ) = describe_options(
   [],
   [ 'seq|s!',  'check if sequences are identical. (On by default)',    { default => 1 } ],
   [ 'id|i!',   'check if ids are identical. (On by default)',          { default => 1 } ],
-  [ 'desc|d!', 'check if descriptions are identical. (On by default)', { default => 1 } ],
+  [ 'desc|d!', 'check if descriptions are identical. (Off by default)', { default => 0 } ],
   [ 'rm_gaps', 'remove gaps',                                          { default => 0 } ],
   [],
   [ 'verbose|v', "print extra stuff" ],

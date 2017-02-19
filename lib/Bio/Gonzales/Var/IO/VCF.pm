@@ -17,6 +17,7 @@ has meta       => ( is => 'rw', default => sub { {} } );
 has sample_ids => ( is => 'rw', default => sub { [] } );
 has _wrote_sth_before => ( is => 'rw' );
 
+sub samples { shift->sample_ids }
 # stay consistent with GFF3 io
 sub pragmas { shift->meta(@_) }
 
