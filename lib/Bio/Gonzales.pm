@@ -37,9 +37,29 @@ into a array of L<Bio::Gonzales::Seq> objects.
 
 =head1 DESCRIPTION
 
-THIS IS THE ALPHA STAGE, SO BEWARE. MY TIMELINE IS TO GET THE DOCUMENTATION DONE TILL JULY 2014.
+=head2 Introdution
 
 Motivation for this package is the lack of speed or ease of use or both in other modules.
+The main branches are grouped into 
+
+=over 4
+
+=item Working with genomic features (representation, grouping, GFF3 input/output)
+
+=item Workgin with sequences (FASTA input/output, basic sequence manipulation and cleaning)
+
+=item Multiple sequence alignment input/output
+
+=item File and folder templates to organise computational experiments
+
+=item BLAST & HMMER3 parsing
+
+=item Standard utility functions
+
+
+
+
+=back
 
 =head2 Stable modules 
 
