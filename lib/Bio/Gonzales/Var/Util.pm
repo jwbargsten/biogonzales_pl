@@ -28,6 +28,7 @@ sub geno2haplo {
     $phased &&= not index( $g, '|' ) < 0;
     my @h = split /[|\/]/, $g;
     @h = ('.')x$ploidy if(@h == 1 && $h[0] eq '.');
+    die "ploidy mismatch in geno2haplo" if(@h != $ploidy);
     push @haplotypes, @h;
   }
   return ( \@haplotypes, $phased );
