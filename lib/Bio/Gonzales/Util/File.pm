@@ -12,8 +12,20 @@ use IO::Zlib;
 use IO::Uncompress::Bunzip2 qw($Bunzip2Error);
 use File::Which qw/which/;
 use Bio::Gonzales::Util::IO::Compressed;
+use Tie::IxHash;
 
-use constant BG_MAGIC => "\037\213\010\4\0\0\0\0\0\377\6\0\102\103\2\0\0\0";
+our $ZIP_MAGIC = Tie::IxHash->new(
+  BGZF     => [ "\037\213\010\4\0\0\0\0\0\377\6\0\102\103\2\0", 'bgzip' ],
+  GZIP     => [ "\037\213",                                     'gzip' ],
+  COMPRESS => [ "\037\235",                                     'gzip' ],
+  BZIP2    => [ "BZh",                                          'bzip2' ],
+  XZ       => [ "\xFD7zXZ",                                     'xz' ]
+);
+#{ ct_lzip,     4, "LZIP" },
+#{ ct_lzma,     6, "\xFFLZMA" },
+#{ ct_lzop,     4, "\211LZO" },
+
+#use constant BZIP2_MAGIC  => "\102\132\150";
 
 our %ZMODES = (
   '>'  => 'wb',
@@ -126,7 +138,7 @@ sub open_on_demand {
     $fh_was_open = 1;
   } elsif ( !ref($src) ) {
     $src = expand_home($src);
-    if ( $src =~ /.+?\.b?gz$/i || ($mode eq '<' && -e $src && gz_type($src)) ) {
+    if ( $src =~ /.+?\.b?gz$/i || ( $mode eq '<' && -e $src && gz_type($src) ) ) {
       if ($EXTERNAL_GZ) {
         $fh = _pipe_z( $EXTERNAL_GZ, $src, $mode );
       } else {
@@ -185,13 +197,20 @@ sub _pipe_z {
 sub is_archive {
   my $f = shift;
 
-  if ( $f =~ /.+?\.b?gz$/i ) {
-    return 'gz';
-  } elsif ( $f =~ /.+?\.bz2$/i ) {
-    return 'bz2';
-  } else {
-    return;
+  open my $fh, '<', $f or die "Can't open filehandle: $!";
+  binmode $fh;
+  my $nread = read( $fh, my $buffer, 32 );
+  close $fh;
+
+  return unless ( $nread >= 4 );
+
+  for ( my $i = 0; $i < $ZIP_MAGIC->Length; $i++ ) {
+    my ($type)  = $ZIP_MAGIC->Keys($i);
+    my ($magic) = $ZIP_MAGIC->Values($i);
+    my $size    = length( $magic->[0] );
+    return lc($type) if ( unpack( 'H' . $size, $buffer ) eq unpack( 'H' . $size, $magic->[0] ) );
   }
+  return;
 }
 
 sub is_newer {
@@ -217,16 +236,17 @@ sub is_fh {
 sub gz_type {
   my $f = shift;
 
+  my ($magic) = $ZIP_MAGIC->Values( $ZIP_MAGIC->Indices("BGZF") );
   open my $fh, '<', $f or die "Can't open filehandle: $!";
   binmode $fh;
-  my $size = length(BG_MAGIC);
+  my $size = length( $magic->[0] );
   my $nread = read( $fh, my $buffer, $size );
   close $fh;
   return unless ( $nread == $size );
 
-  if ( unpack( 'H16', $buffer ) eq unpack( 'H16', BG_MAGIC ) ) {
+  if ( unpack( 'H' . $size, $buffer ) eq unpack( 'H' . $size, $magic->[0] ) ) {
     return 'bgzf';
-  } elsif ( unpack( 'H2', $buffer ) eq unpack( 'H2', BG_MAGIC ) ) {
+  } elsif ( unpack( 'H2', $buffer ) eq unpack( 'H2', $magic->[0] ) ) {
     return 'gzip';
   } else {
     return;
