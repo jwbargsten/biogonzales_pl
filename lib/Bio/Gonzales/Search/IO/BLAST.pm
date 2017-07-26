@@ -47,9 +47,9 @@ sub makeblastdb {
 
     my $tmp_f = mktemp( catfile( $c{wd}, 'tempXXXXXX' ) );
 
-    if ( $type eq 'gz' ) {
+    if ( $type eq 'gzip' or $type eq 'bgzf' ) {
       system("gzip -dc <$seqf >$tmp_f") == 0 or die "system failed: $?";
-    } elsif ( $type eq 'bz2' ) {
+    } elsif ( $type eq 'bzip2' ) {
       system("bzip2 -dc <$seqf >$tmp_f") == 0 or die "system failed: $?";
     } else {
       confess("archive type $type not supported");
