@@ -14,7 +14,7 @@ our ( @EXPORT, @EXPORT_OK, %EXPORT_TAGS );
 
 @EXPORT      = qw();
 %EXPORT_TAGS = ();
-@EXPORT_OK   = qw(undef_slice slice invslice flatten hash_merge as_arrayref sys_pipe sys_fmt);
+@EXPORT_OK   = qw(undef_slice slice invslice flatten hash_merge as_arrayref sys_pipe sys_fmt sys_pipe_fatal);
 
 sub slice {
   my ( $hr, @k ) = @_;
@@ -108,7 +108,7 @@ sub sys_fmt {
       $cmd .= shell_quote(@$e) . " ";
     } elsif ( $e =~ /^>>|\d?>|<|<<|\||\d?>\&\d$/ ) {
       $cmd .= $e . " ";
-    } elsif(defined $e) {
+    } elsif ( defined $e ) {
       $cmd .= shell_quote($e) . " ";
     } else {
       next;
@@ -122,6 +122,11 @@ sub sys_fmt {
 sub sys_pipe {
   my $cmd = sys_fmt(@_);
   system($cmd) == 0 or confess "system failed: $?\n$cmd";
+}
+
+sub sys_pipe_fatal {
+  my $cmd  = 'set pipefail; ' . sys_fmt(@_);
+  system($cmd) == 0 or confess "system " . join( " ", @_ ) . " FAILED: $? ## $!";
 }
 
 1;

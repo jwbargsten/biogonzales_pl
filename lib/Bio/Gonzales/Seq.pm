@@ -1,5 +1,7 @@
 package Bio::Gonzales::Seq;
 
+use v5.11;
+
 use Mouse;
 
 use overload '""' => 'all';
@@ -7,7 +9,7 @@ use Carp;
 use Data::Dumper;
 use Digest::SHA1 qw/sha1_hex/;
 use Digest::MD5 qw/md5_hex/;
-
+use Digest::SHA2;
 
 our $WIDTH = 80;
 # VERSION
@@ -59,11 +61,11 @@ sub as_hash {
 }
 
 sub Format_seq_string {
-  my ($str, $width) = @_;
+  my ( $str, $width ) = @_;
   $width //= $WIDTH;
 
   if ( defined $str && length($str) > 0 ) {
-    $str =~ tr/ \t\n\r//d;            # Remove whitespace and numbers
+    $str =~ tr/ \t\n\r//d;    # Remove whitespace and numbers
     $str =~ s/\d+//g;
     $str =~ s/(.{1,$width})/$1\n/g;
     return $str;
@@ -105,7 +107,7 @@ around 'seq' => sub {
 };
 
 sub gapless_seq {
-  (my $seq = shift->seq) =~ tr/-.//d;
+  ( my $seq = shift->seq ) =~ tr/-.//d;
   return $seq;
 }
 
@@ -119,14 +121,26 @@ sub rm_gaps {
 sub clone {
   my ($self) = @_;
 
-  return __PACKAGE__->new( id => $self->id, desc => $self->desc, seq => $self->seq, delim => $self->delim, info => $self->info );
+  return __PACKAGE__->new(
+    id    => $self->id,
+    desc  => $self->desc,
+    seq   => $self->seq,
+    delim => $self->delim,
+    info  => $self->info
+  );
   #shift->clone_object(@_)
 }
 
 sub clone_empty {
   my ($self) = @_;
 
-  return __PACKAGE__->new( id => $self->id, desc => $self->desc, seq => '', delim => $self->delim , info => $self->info);
+  return __PACKAGE__->new(
+    id    => $self->id,
+    desc  => $self->desc,
+    seq   => '',
+    delim => $self->delim,
+    info  => $self->info
+  );
 }
 
 sub display_id { shift->id(@_) }
@@ -150,7 +164,7 @@ sub all { shift->stringify(@_) }
 sub all_formatted { shift->stringify_pretty(@_) }
 
 sub stringify_pretty {
-  my ($self, $width) = @_;
+  my ( $self, $width ) = @_;
   $width //= $WIDTH;
 
   return
@@ -253,11 +267,18 @@ sub subseq {
 }
 
 sub sha1_checksum {
-  return sha1_hex(uc(shift->seq));
+  return sha1_hex( shift->seq );
 }
 
 sub md5_checksum {
-  return md5_hex(uc(shift->seq));
+  return md5_hex( shift->seq );
+}
+
+sub sha512_checksum {
+  my $self = shift;
+  my $sha2 = Digest::SHA2->new(512);
+  $sha2->add( $self->seq );
+  return $sha2->hexdigest;
 }
 
 sub subseq_as_string {
