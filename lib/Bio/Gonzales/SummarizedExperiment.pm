@@ -10,6 +10,7 @@ use IO::Handle ();
 
 use List::MoreUtils qw/firstidx indexes uniq any/;
 use Bio::Gonzales::Matrix::IO qw/mspew/;
+use Algorithm::Loops qw/MapCarU/;
 
 use Data::Dumper;
 
@@ -77,6 +78,27 @@ sub row_idx { shift->_idx( 'row_names', @_ ) }
 sub col_idx { shift->_idx( 'col_names', @_ ) }
 
 sub header_idx { shift->col_idx(@_) }
+
+sub transpose {
+  my $self = shift;
+
+ my @assay_t = MapCarU { [@_] } @{$self->{assay}};
+ my @row_data_t = MapCarU { [@_] } @{$self->{row_data}};
+ my @col_data_t = MapCarU { [@_] } @{$self->{col_data}};
+
+
+  return __PACKAGE__->new(
+    assay     => \@assay_t,
+    row_names => Clone::clone( $self->col_names ),
+    row_data  => \@row_data_t,
+    col_names => Clone::clone( $self->row_names ),
+    col_data  => \@col_data_t,
+  );
+}
+
+sub make_consistent {
+
+}
 
 sub _idx_match {
   my ( $self, $m, $rex ) = @_;
