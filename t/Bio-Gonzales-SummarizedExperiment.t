@@ -13,6 +13,10 @@ use Test::Exception;
 
 BEGIN { use_ok('Bio::Gonzales::SummarizedExperiment'); }
 
+ok( Bio::Gonzales::SummarizedExperiment::_is_rectangular_matrix(  [ [],  [], [] ] ) );
+ok( !Bio::Gonzales::SummarizedExperiment::_is_rectangular_matrix( [ [1], [], [] ] ) );
+ok( !Bio::Gonzales::SummarizedExperiment::_is_rectangular_matrix( [ 1,   [], [] ] ) );
+
 my $se_base = Bio::Gonzales::SummarizedExperiment->new(
   assay => [
     [qw/a b c/],    #
@@ -30,17 +34,18 @@ my $se_base = Bio::Gonzales::SummarizedExperiment->new(
     [qw/c1d1 c2d1 c3d1/],    #
     [qw/c1d2 c2d2 c3d2/]
   ],
+  col_data_names => [qw/cdn1 cdn2/],
+  row_data_names => [qw/rdn1 rdn2 rdn3/],
 );
 
 my $se_t = $se_base->clone;
 
 $se_t = $se_base->transpose;
 
-is_deeply( $se_t->assay, [ [qw/a 1 d/], [qw/b 2 e/], [qw/c 3 f/] ] );
-
-is_deeply( $se_t->row_names, $se_base->col_names );
-
-is_deeply( $se_t->col_data, [ [qw/c1d1 c1d2/], [qw/c2d1 c2d2/], [qw/c3d1 c3d2/] ] );
+is_deeply( $se_t->col_data_names, [qw/rdn1 rdn2 rdn3/] );
+is_deeply( $se_t->assay,          [ [qw/a 1 d/], [qw/b 2 e/], [qw/c 3 f/] ] );
+is_deeply( $se_t->row_names,      [qw/cn1 cn2 cn3/] );
+is_deeply( $se_t->col_data,       [ [qw/c1d1 c1d2/], [qw/c2d1 c2d2/], [qw/c3d1 c3d2/] ] );
 
 my $se = $se_base->clone;
 
@@ -111,5 +116,34 @@ $sem = $se1->merge( $se2, { join => 'left', by_x => [qw/cn1 cn3/], by_y => [qw/c
 is_deeply( $sem->assay, [ [qw/1 2 3 NA/], [qw/a b c b/], [qw/d e f e/] ] );
 is_deeply( $sem->col_names, [qw/cn1 cn2 cn3 ckn2/] );
 
-done_testing();
+my $se_slice = $se_base->slice_by_names( [qw/cn1 cn3/] );
+is_deeply(
+  $se_slice->assay,
+  [
+    [qw/a c/],    #
+    [ 1, 3 ],     #
+    [qw/d f/],
+  ]
+);
 
+is_deeply( $se_slice->col_names, [qw/cn1 cn3/] );
+
+my @data;
+@data = ( [qw/1 2 3/], [qw/2/], [qw/3 2/] );
+Bio::Gonzales::SummarizedExperiment::_na_fill_2d( \@data );
+is_deeply( \@data, [ [qw/1 2 3/], [qw/2 NA NA /], [qw/3 2 NA/] ] );
+
+@data = ( [qw/1 2 3/], [qw/2/], [qw/3 2/] );
+Bio::Gonzales::SummarizedExperiment::_na_fill_2d( \@data, [ 5, 6 ] );
+is_deeply( \@data,
+  [ [qw/1 2 3 NA NA NA/], [qw/2 NA NA NA NA NA/], [qw/3 2 NA NA NA NA/], [ ('NA') x 6 ], [ ('NA') x 6 ] ] );
+
+is_deeply(
+  $se_slice->col_data,
+  [
+    [qw/c1d1 c3d1/],    #
+    [qw/c1d2 c3d2/]
+  ]
+);
+
+done_testing();

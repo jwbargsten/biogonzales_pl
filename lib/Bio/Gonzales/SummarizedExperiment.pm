@@ -9,6 +9,7 @@ use v5.11;
 use IO::Handle ();
 
 use List::MoreUtils qw/firstidx indexes uniq any/;
+use List::Util qw/max/;
 use Bio::Gonzales::Matrix::IO qw/mspew/;
 use Algorithm::Loops qw/MapCarU/;
 
@@ -24,7 +25,8 @@ use namespace::clean;
 our $VERSION  = 0.01_01;
 our $NA_VALUE = 'NA';
 
-has [qw/assay col_data row_data row_names col_names/] => ( is => 'rw', default => sub { [] } );
+has [qw/assay col_data row_data row_names col_names row_data_names col_data_names/] =>
+  ( is => 'rw', default => sub { [] } );
 
 sub data   { shift->assay(@_) }
 sub header { shift->col_names(@_) }
@@ -82,17 +84,18 @@ sub header_idx { shift->col_idx(@_) }
 sub transpose {
   my $self = shift;
 
- my @assay_t = MapCarU { [@_] } @{$self->{assay}};
- my @row_data_t = MapCarU { [@_] } @{$self->{row_data}};
- my @col_data_t = MapCarU { [@_] } @{$self->{col_data}};
-
+  my @assay_t    = MapCarU { [@_] } @{ $self->{assay} };
+  my @row_data_t = MapCarU { [@_] } @{ $self->{row_data} };
+  my @col_data_t = MapCarU { [@_] } @{ $self->{col_data} };
 
   return __PACKAGE__->new(
-    assay     => \@assay_t,
-    row_names => Clone::clone( $self->col_names ),
-    row_data  => \@row_data_t,
-    col_names => Clone::clone( $self->row_names ),
-    col_data  => \@col_data_t,
+    assay          => \@assay_t,
+    row_names      => Clone::clone( $self->col_names ),
+    row_data       => \@row_data_t,
+    col_names      => Clone::clone( $self->row_names ),
+    col_data       => \@col_data_t,
+    col_data_names => Clone::clone( $self->row_data_names ),
+    row_data_names => Clone::clone( $self->col_data_names ),
   );
 }
 
@@ -174,16 +177,24 @@ sub add_cols {
 sub group {
   my ( $self, $idcs ) = @_;
 
-  my $assay     = $self->assay;
-  my $row_names = $self->row_names;
-  my $row_data  = $self->row_data;
+  my $assay          = $self->assay;
+  my $row_names      = $self->row_names;
+  my $row_data       = $self->row_data;
+  my $row_data_names = $self->row_data_names;
   my %groups;
   my @key_names = @{ $self->col_names }[@$idcs];
   for ( my $i = 0; $i < @$assay; $i++ ) {
     my @key = @{ $assay->[$i] }[@$idcs];
     my $key = join( $;, @key );
-    $groups{$key}
-      //= { idcs => [], rows => [], key => \@key, key_names => \@key_names, row_names => [], row_data => [] };
+    $groups{$key} //= {
+      idcs           => [],
+      rows           => [],
+      key            => \@key,
+      key_names      => \@key_names,
+      row_names      => [],
+      row_data       => [],
+      row_data_names => $row_data_names
+    };
     push @{ $groups{$key}{idcs} },      $i;
     push @{ $groups{$key}{rows} },      $assay->[$i];
     push @{ $groups{$key}{row_names} }, $row_names->[$i] if ( $row_names && @$row_names );
@@ -204,9 +215,10 @@ sub nrow { scalar @{ shift->assay }; }
 sub subset {
   my ( $self, $code ) = @_;
 
-  my $assay     = $self->assay;
-  my $row_names = $self->row_names;
-  my $row_data  = $self->row_data;
+  my $assay          = $self->assay;
+  my $row_names      = $self->row_names;
+  my $row_data       = $self->row_data;
+  my $row_data_names = $self->row_data_names;
 
   my @row_names_new;
   my @assay_new;
@@ -219,11 +231,13 @@ sub subset {
     }
   }
   return __PACKAGE__->new(
-    assay     => \@assay_new,
-    row_names => \@row_names_new,
-    row_data  => \@row_data_new,
-    col_names => Clone::clone( $self->col_names ),
-    col_data  => Clone::clone( $self->col_data )
+    assay          => \@assay_new,
+    row_names      => \@row_names_new,
+    row_data       => \@row_data_new,
+    row_data_names => Clone::clone( $self->row_data_names ),
+    col_names      => Clone::clone( $self->col_names ),
+    col_data       => Clone::clone( $self->col_data ),
+    col_data_names => Clone::clone( $self->col_data_names ),
   );
 }
 
@@ -324,34 +338,127 @@ sub merge {
     }
   }
   return __PACKAGE__->new(
-    assay     => \@assay_new,
-    col_data  => \@col_data,
-    col_names => \@col_names,
-    row_names => \@row_names_new,
-    row_data  => \@row_data_new
-  );
+    assay => \@assay_new,
 
+    row_data => \@row_data_new,
+    col_data => \@col_data,
+
+    row_data_names => Clone::clone( $se_x->row_data_names ),
+    col_data_names => Clone::clone( $se_x->col_data_names ),
+
+    row_names => \@row_names_new,
+    col_names => \@col_names,
+  );
+}
+
+sub inconsistencies {
+  my $self = shift;
+
+  # check if assay is rectangular
+  # check if row data is rectangular and has the
+
+}
+
+sub _is_rectangular_matrix {
+  my $aoa = shift;
+
+  return unless ( ref $aoa eq 'ARRAY' );
+  my $rlen;
+  for ( my $i = 0; $i < @$aoa; $i++ ) {
+    my $row = $aoa->[$i];
+    return unless ( $row && ref $row eq 'ARRAY' );
+    $rlen = @$row unless ( defined($rlen) );
+    return unless ( @$row == $rlen );
+  }
+  return 1;
 }
 
 sub clone {
   my $self = shift;
   return __PACKAGE__->new(
-    assay     => Clone::clone( $self->assay ),
-    col_data  => Clone::clone( $self->col_data ),
-    col_names => Clone::clone( $self->col_names ),
-    row_names => Clone::clone( $self->row_names ),
-    row_data  => Clone::clone( $self->row_data ),
+    assay          => Clone::clone( $self->assay ),
+    col_data       => Clone::clone( $self->col_data ),
+    col_names      => Clone::clone( $self->col_names ),
+    row_names      => Clone::clone( $self->row_names ),
+    row_data       => Clone::clone( $self->row_data ),
+    row_data_names => Clone::clone( $self->row_data_names ),
+    col_data_names => Clone::clone( $self->col_data_names ),
   );
 }
 
 sub rbind {
-  my ( $self, $rows, $names ) = @_;
+  my ( $self, $rows, $names, $row_data ) = @_;
 
-  push @{ $self->row_names }, @$names if ( $names && @$names );
+  my $nrow = $self->nrow;
 
   push @{ $self->assay }, @$rows;
 
+  if ( $names && @$names ) {
+
+    $self->row_names->[ $nrow - 1 ] //= undef if ( $nrow > 0 );
+    push @{ $self->row_names }, @$names;
+  }
+
+  if ( $row_data && @$row_data ) {
+    $self->row_data->[ $nrow - 1 ] //= [] if ( $nrow > 0 );
+    push @{ $self->row_data }, @$row_data;
+  }
+
   return $self;
+}
+
+sub dim {
+  my $self = shift;
+  return ( $self->nrow, $self->ncol );
+}
+
+sub _max_dim {
+  my $aoa = shift;
+
+  return unless ( ref $aoa eq 'ARRAY' );
+  my $max_ncol;
+  for ( my $i = 0; $i < @$aoa; $i++ ) {
+    my $row = $aoa->[$i];
+    return unless ( $row && ref $row eq 'ARRAY' );
+    $max_ncol = @$row if ( !defined($max_ncol) || @$row > $max_ncol );
+  }
+  return unless ( defined $max_ncol );
+
+  return [ scalar(@$aoa), $max_ncol ];
+}
+
+sub _na_fill_2d {
+  my $data = shift;
+  my $dim = shift // [ 0, 0 ];
+
+  return unless ( $data && ref $data eq 'ARRAY' );
+  my $dim_data = _max_dim($data);
+  return unless ($dim);
+  my $nrow = max( $dim_data->[0], $dim->[0] );
+  my $ncol = max( $dim_data->[1], $dim->[1] );
+
+  for ( my $i = 0; $i < $nrow; $i++ ) {
+    $data->[$i] //= [];
+    next if ( @{ $data->[$i] } == $ncol );
+    for ( my $j = 0; $j < $ncol; $j++ ) {
+      $data->[$i][$j] //= $NA_VALUE;
+    }
+  }
+  return $data;
+}
+
+sub _na_fill_1d {
+  my $data = shift;
+  my $dim  = shift;
+
+  return unless ( $data && ref $data eq 'ARRAY' );
+  my $len = max( $dim, @$data );
+  return unless ($len);
+
+  for ( my $i = 0; $i < $len; $i++ ) {
+    $data->[$i] //= $NA_VALUE;
+  }
+  return $data;
 }
 
 sub add_rows { shift->rbind(@_) }
@@ -428,11 +535,13 @@ sub slice_by_idcs {
   @new_coldata = map { [ @{$_}[@$idcs] ] } @{ $self->col_data } if ( $self->has_col_data );
 
   return __PACKAGE__->new(
-    assay     => \@assay_new,
-    row_names => Clone::clone( $self->row_names ),
-    row_data  => Clone::clone( $self->row_data ),
-    col_names => \@new_colnames,
-    col_data  => \@new_coldata,
+    assay          => \@assay_new,
+    row_names      => Clone::clone( $self->row_names ),
+    row_data       => Clone::clone( $self->row_data ),
+    col_names      => \@new_colnames,
+    col_data       => \@new_coldata,
+    row_data_names => Clone::clone( $self->row_data_names ),
+    col_data_names => Clone::clone( $self->col_data_names ),
   );
 }
 
