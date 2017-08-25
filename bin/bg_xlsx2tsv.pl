@@ -29,26 +29,27 @@ unless ($prefix) {
 my $d = xlsx_slurp($in_f);
 
 if ( $opt{index} && $opt{'index'} > 0 && @$d >= $opt{'index'} ) {
-  say STDERR "out pattern: $prefix$opt{suffix}";
+  #say STDERR "out pattern: $prefix$opt{suffix}";
   my $idx      = $opt{index} - 1;
   my $res_file = $prefix . $opt{suffix};
   if ( $opt{stdout} ) {
     $res_file = \*STDOUT;
   } else {
-
     die("$res_file exists") if ( -e $res_file && !$opt{overwrite} );
+    say STDERR "sheet $opt{index}: $res_file";
   }
-  clean($d->[$idx]);
+  clean( $d->[$idx] );
   mspew( $res_file, $d->[$idx], { na_value => $opt{na_value} } );
 } else {
-  say STDERR "out pattern: $prefix<NUM>$opt{suffix}";
+  #say STDERR "out pattern: $prefix<NUM>$opt{suffix}";
   my $i = 1;
   for my $s (@$d) {
     clean($s);
     if ( @$s > 0 ) {
-      my $res_file = $prefix . $i . $opt{suffix};
+      my $res_file = $prefix . ".".$i . $opt{suffix};
       die("$res_file exists") if ( -e $res_file && !$opt{overwrite} );
       mspew( $res_file, $s, { na_value => $opt{na_value} } );
+      say STDERR "sheet $i: $res_file";
     }
     $i++;
   }
@@ -58,7 +59,7 @@ sub clean {
   my $d = shift;
   for my $x (@$d) {
     for my $y (@$x) {
-      $y =~ y/\r\n//d if($y);
+      $y =~ y/\r\n//d if ($y);
     }
   }
 }
