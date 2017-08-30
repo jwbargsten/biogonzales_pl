@@ -338,7 +338,7 @@ sub mspew {
   my ( $dest, $m, $c ) = @_;
 
   confess "no matrix, you need to supply a matrix of the form [ [ 1,2,3 ], [ 4,5,6 ], ... ]"
-    unless ($m);
+    unless ($m && ref $m eq 'ARRAY');
 
   my $header    = $c->{header}    // $c->{ids};
   my $rownames  = $c->{row_names} // $c->{rownames};
