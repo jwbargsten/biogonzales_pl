@@ -10,7 +10,7 @@ use IO::Handle ();
 
 use List::MoreUtils qw/firstidx indexes uniq any/;
 use List::Util qw/max/;
-use Bio::Gonzales::Matrix::IO qw/mspew/;
+use Bio::Gonzales::Matrix::IO qw/mspew mslurp/;
 use Algorithm::Loops qw/MapCarU/;
 
 use Data::Dumper;
@@ -25,7 +25,7 @@ use namespace::clean;
 our $VERSION  = 0.01_01;
 our $NA_VALUE = 'NA';
 
-has [qw/assay col_data row_data row_names col_names row_data_names col_data_names/] =>
+has [qw/assay col_data row_data row_names col_names row_data_names col_data_names meta_data/] =>
   ( is => 'rw', default => sub { [] } );
 
 sub data   { shift->assay(@_) }
@@ -44,7 +44,13 @@ sub new_from_mslurp {
   my ( $class, $m, $cn, $rn ) = @_;
   $cn //= [];
   $rn //= [];
-  return __PACKAGE__->new( assay => $m, col_names => $cn, row_names => $rn );
+  return $class->new( assay => $m, col_names => $cn, row_names => $rn );
+}
+
+sub slurp_assay {
+  my $class = shift;
+
+  return $class->new_from_mslurp(mslurp(@_));
 }
 
 sub spew_assay {
@@ -252,6 +258,7 @@ sub _invert_idcs {
   return \@inv;
 }
 
+#TODO names to idcs as wantarray?
 sub merge {
   my ( $se_x, $se_y, $param ) = @_;
 
@@ -485,9 +492,13 @@ sub aggregate_by_idcs {
 }
 
 sub col_names_to_idcs {
-  my ( $self, $names ) = @_;
-  my @idcs = map { $self->col_idx($_) } @$names;
-  die "could not find all idcs " . jon( ", ", @$names ) if ( any { $_ < 0 } @idcs );
+  my $self = shift;
+  my @names = @_;
+  return unless(@names);
+  @names = @{$names[0]} if(@names == 1 && ref $names[0] eq 'ARRAY');
+
+  my @idcs = map { $self->col_idx($_) } @names;
+  die "could not find all idcs " . jon( ", ", @names ) if ( any { $_ < 0 } @idcs );
   return \@idcs;
 }
 
@@ -498,10 +509,75 @@ sub aggregate_by_names {
   return $self->aggregate_by_idcs( $idcs, $code, $col_names );
 }
 
+sub names_to_idcs {
+  return shift->col_names_to_idcs(@_);
+}
+
 sub col_idx_map {
   my $i = 0;
   return { map { $_ => $i++ } @{ shift->col_names } };
 }
+
+# from dict_slurp
+#sub group {
+  #my $self = shift;
+  #my %c = @_;
+
+
+  #for my $k (qw/key_names val_names key_idcs val_idcs key_idx val_idx/) {
+    #$c{$k} = [ $c{$k} ] if($c{$k} && !(ref $c{$k}));
+  #}
+
+
+  #$c{key_idx} //= $c{key_idcs};
+  #$c{val_idx} //= $c{val_idcs};
+
+  #croak "you have not specified key_idx"
+    #unless ( exists( $c{key_idx} ) );
+
+  #my $is_strict     = $c{strict};
+
+  ## concatenate keys to a big string
+  #my @kidcs;
+  #if ( $c{concat_keys} || !ref( $c{key_idx} ) ) {
+    #@kidcs = ( $c{key_idx} );
+  #} else {
+    ## or treat them separately
+    #@kidcs = @{ $c{key_idx} };
+  #}
+
+  #my $vidx = $c{val_idx};
+  ## make an array from it
+
+  #my $uniq = $c{uniq} // $c{uniq_vals} // $c{unique} // 0;
+
+  #my $assay = $self->assay;
+
+  #my %map;
+  #for my $r (@$assay) {
+
+    #for my $kidx (@kidcs) {
+
+      #my @k = ( ref $kidx ? @{$r}[@$kidx] : $r->[$kidx] );
+      #@k = map { $_ // '' } @k;
+      #@k = sort @k if ( $c{sort_keys} );
+      #my $k = join( $;, @k ) // '';
+
+      #if ( $uniq && !defined($vidx) ) {
+        #$map{$k} = 1;
+      #} elsif ( not defined $vidx ) {
+        #$map{$k}++;
+      #} elsif ($uniq) {
+        #confess "strict mode: two times the same key $k" if ( $is_strict && defined( $map{$k} ) );
+        #$map{$k} = ( ref $vidx ? [ @{$r}[@$vidx] ] : ( $vidx eq 'all' ? $r : $r->[$vidx] ) );
+      #} else {
+        #$map{$k} //= [];
+        #push @{ $map{$k} }, ( ref $vidx ? [ @{$r}[@$vidx] ] : ( $vidx eq 'all' ? $r : $r->[$vidx] ) );
+      #}
+    #}
+  #}
+  #return \%map;
+#}
 
 sub col_rename {
   my ( $self, $old, $new ) = @_;
@@ -513,14 +589,37 @@ sub col_rename {
 }
 
 sub row_apply {
-  my ( $self, $code ) = @_;
+  my ( $self, $code) = @_;
 
   my @res;
   my $assay = $self->assay;
   for ( my $i = 0; $i < @$assay; $i++ ) {
     push @res, $code->( $self, $assay->[$i] );
   }
-  return @res;
+  return \@res;
+}
+sub col_apply {
+  my ( $self, $code ) = @_;
+
+  my @res;
+  my @assay_t    = MapCarU { [@_] } @{ $self->{assay} };
+
+  for ( my $i = 0; $i < @assay_t; $i++ ) {
+    push @res, $code->( $self, $assay_t[$i] );
+  }
+  return \@res;
+}
+
+sub apply {
+  my ($self, $dir, $code, @args)  = @_;
+
+  if($dir eq 'r' || $dir == 1) {
+    return $self->row_apply($code, @args);
+  } elsif($dir eq 'c' || $dir == 2) {
+    return $self->col_apply($code, @args);
+  } elsif($dir eq 'rc' || $dir eq 'cr' || $dir == 3) {
+    # cell apply
+  }
 }
 
 sub slice_by_idcs {
@@ -582,5 +681,13 @@ sub slice_by_names {
   my $idcs = $self->col_names_to_idcs($names);
   return $self->slice_by_idcs($idcs);
 }
+
+# from Mojo::Collection
+# shuffle
+# each
+# grep
+# first
+# last
+# uniq
 
 1;

@@ -7,10 +7,11 @@ use strict;
 use Carp;
 use FindBin;
 use File::Spec;
+use Scalar::Util qw/readonly/;
 use Bio::Gonzales::Util::File qw/slurpc/;
 use Bio::Gonzales::Util::Cerial;
 use Bio::Gonzales::Util::Development::File;
-use Data::Rmap qw/rmap_scalar/;
+use Data::Rmap qw/rmap_scalar rmap_to :types/;
 use Bio::Gonzales::Util::Log;
 use Data::Printer {
   indent         => 2,
@@ -70,13 +71,16 @@ sub _build__substitute_conf {
 
   return sub {
     return unless defined $_[0];
-    $_[0] =~ s{ ^ ~ ( [^/]* ) }
+    # boolean values in YAML::XS are readonly. Take care of this.
+    return $_[0] if(readonly($_[0]));
+
+      $_[0] =~ s{ ^ ~ ( [^/]* ) }
             { $1
                 ? (getpwnam($1))[7]
                 : ( $ENV{HOME} || (getpwuid($>))[7] )
             }ex;
 
-    $_[0] =~ s{__($subsre)(?:\((.+?)\))?__}{ $subs{ $1 }->( $2 ? split( /,/, $2 ) : () ) }eg;
+      $_[0] =~ s{__($subsre)(?:\((.+?)\))?__}{ $subs{ $1 }->( $2 ? split( /,/, $2 ) : () ) }eg;
     return $_[0];
     }
 }
@@ -105,7 +109,7 @@ sub _build_config {
     confess "configuration file >> $conf_f << is not a hash/dictionary structure"
       if ( ref $conf ne 'HASH' );
     $self->log->info("reading >> $conf_f <<");
-    rmap_scalar { $sub->($_) } $conf;
+    rmap_to { $sub->($_) } VALUE, $conf;
   }
 
   my $av_conf_f = join( ".", $self->analysis_version, "conf", "yml" );
@@ -116,7 +120,7 @@ sub _build_config {
       if ( ref $av_conf ne 'HASH' );
 
     $self->log->info("reading >> $av_conf_f <<");
-    rmap_scalar { $sub->($_) } $conf;
+    rmap_to { $sub->($_) } VALUE, $conf;
 
     $conf = { %$conf, %$av_conf };
   }
@@ -203,11 +207,11 @@ sub conf {
   }
   if (@keys) {
     my $k = join( " ", @keys );
-    $self->log->info( "(gonzconf) > " . $k . " <", p($data) )
+    $self->log->info( "(gonzconf) > " . $k . " <", np($data) )
       unless ( $self->_config_key_cache->{ '_' . $k }++ );
 
   } else {
-    $self->log->info( "(gonzconf) dump", p($data) )
+    $self->log->info( "(gonzconf) dump", np($data) )
       unless ( $self->_config_key_cache->{'_'}++ );
   }
   return $data;

@@ -26,8 +26,15 @@ my $COMMENT_RE = qr/^\s*#/;
 
 sub dict_slurp {
   my ( $src, $cc ) = @_;
+
+  croak "no config settings given"
+  unless($cc && ref $cc eq 'HASH');
+
+  $cc->{key_idx} //= $cc->{key_idcs};
+  $cc->{val_idx} //= $cc->{val_idcs};
+
   croak "you have not specified key_idx"
-    unless ( $cc && exists( $cc->{key_idx} ) );
+    unless ( exists( $cc->{key_idx} ) );
 
   $cc //= {};
   my %c = (
@@ -210,7 +217,6 @@ sub mslurp {
     return \@m;
   }
 }
-
 
 sub xcsv_slurp {
   my ( $src, $c ) = @_;

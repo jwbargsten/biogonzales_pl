@@ -28,6 +28,7 @@ my $structure = {
   a => "__av__/wurst",
   b => [qw(~/a b __an__)],
   c => { a => '__data__' },
+  d => 1,
 };
 
 my ( $tmp_fh, $tmp_f ) = tempfile();
@@ -43,6 +44,7 @@ is(
     a => "2017-08-08_test/wurst",
     b => [ "$ENV{HOME}/a", 'b', path(".")->realpath->basename ],
     c => { a => '/tmp/data' },
+    d => 1,
   }
 );
 done_testing();
