@@ -50,7 +50,7 @@ sub new_from_mslurp {
 sub slurp_assay {
   my $class = shift;
 
-  return $class->new_from_mslurp(mslurp(@_));
+  return $class->new_from_mslurp( mslurp(@_) );
 }
 
 sub spew_assay {
@@ -492,10 +492,10 @@ sub aggregate_by_idcs {
 }
 
 sub col_names_to_idcs {
-  my $self = shift;
+  my $self  = shift;
   my @names = @_;
-  return unless(@names);
-  @names = @{$names[0]} if(@names == 1 && ref $names[0] eq 'ARRAY');
+  return unless (@names);
+  @names = @{ $names[0] } if ( @names == 1 && ref $names[0] eq 'ARRAY' );
 
   my @idcs = map { $self->col_idx($_) } @names;
   die "could not find all idcs " . jon( ", ", @names ) if ( any { $_ < 0 } @idcs );
@@ -520,63 +520,61 @@ sub col_idx_map {
 
 # from dict_slurp
 #sub group {
-  #my $self = shift;
-  #my %c = @_;
+#my $self = shift;
+#my %c = @_;
 
+#for my $k (qw/key_names val_names key_idcs val_idcs key_idx val_idx/) {
+#$c{$k} = [ $c{$k} ] if($c{$k} && !(ref $c{$k}));
+#}
 
-  #for my $k (qw/key_names val_names key_idcs val_idcs key_idx val_idx/) {
-    #$c{$k} = [ $c{$k} ] if($c{$k} && !(ref $c{$k}));
-  #}
+#$c{key_idx} //= $c{key_idcs};
+#$c{val_idx} //= $c{val_idcs};
 
+#croak "you have not specified key_idx"
+#unless ( exists( $c{key_idx} ) );
 
-  #$c{key_idx} //= $c{key_idcs};
-  #$c{val_idx} //= $c{val_idcs};
+#my $is_strict     = $c{strict};
 
-  #croak "you have not specified key_idx"
-    #unless ( exists( $c{key_idx} ) );
+## concatenate keys to a big string
+#my @kidcs;
+#if ( $c{concat_keys} || !ref( $c{key_idx} ) ) {
+#@kidcs = ( $c{key_idx} );
+#} else {
+## or treat them separately
+#@kidcs = @{ $c{key_idx} };
+#}
 
-  #my $is_strict     = $c{strict};
+#my $vidx = $c{val_idx};
+## make an array from it
 
-  ## concatenate keys to a big string
-  #my @kidcs;
-  #if ( $c{concat_keys} || !ref( $c{key_idx} ) ) {
-    #@kidcs = ( $c{key_idx} );
-  #} else {
-    ## or treat them separately
-    #@kidcs = @{ $c{key_idx} };
-  #}
+#my $uniq = $c{uniq} // $c{uniq_vals} // $c{unique} // 0;
 
-  #my $vidx = $c{val_idx};
-  ## make an array from it
+#my $assay = $self->assay;
 
-  #my $uniq = $c{uniq} // $c{uniq_vals} // $c{unique} // 0;
+#my %map;
+#for my $r (@$assay) {
 
-  #my $assay = $self->assay;
+#for my $kidx (@kidcs) {
 
-  #my %map;
-  #for my $r (@$assay) {
+#my @k = ( ref $kidx ? @{$r}[@$kidx] : $r->[$kidx] );
+#@k = map { $_ // '' } @k;
+#@k = sort @k if ( $c{sort_keys} );
+#my $k = join( $;, @k ) // '';
 
-    #for my $kidx (@kidcs) {
-
-      #my @k = ( ref $kidx ? @{$r}[@$kidx] : $r->[$kidx] );
-      #@k = map { $_ // '' } @k;
-      #@k = sort @k if ( $c{sort_keys} );
-      #my $k = join( $;, @k ) // '';
-
-      #if ( $uniq && !defined($vidx) ) {
-        #$map{$k} = 1;
-      #} elsif ( not defined $vidx ) {
-        #$map{$k}++;
-      #} elsif ($uniq) {
-        #confess "strict mode: two times the same key $k" if ( $is_strict && defined( $map{$k} ) );
-        #$map{$k} = ( ref $vidx ? [ @{$r}[@$vidx] ] : ( $vidx eq 'all' ? $r : $r->[$vidx] ) );
-      #} else {
-        #$map{$k} //= [];
-        #push @{ $map{$k} }, ( ref $vidx ? [ @{$r}[@$vidx] ] : ( $vidx eq 'all' ? $r : $r->[$vidx] ) );
-      #}
-    #}
-  #}
-  #return \%map;
+#if ( $uniq && !defined($vidx) ) {
+#$map{$k} = 1;
+#} elsif ( not defined $vidx ) {
+#$map{$k}++;
+#} elsif ($uniq) {
+#confess "strict mode: two times the same key $k" if ( $is_strict && defined( $map{$k} ) );
+#$map{$k} = ( ref $vidx ? [ @{$r}[@$vidx] ] : ( $vidx eq 'all' ? $r : $r->[$vidx] ) );
+#} else {
+#$map{$k} //= [];
+#push @{ $map{$k} }, ( ref $vidx ? [ @{$r}[@$vidx] ] : ( $vidx eq 'all' ? $r : $r->[$vidx] ) );
+#}
+#}
+#}
+#return \%map;
 #}
 
 sub col_rename {
@@ -589,35 +587,38 @@ sub col_rename {
 }
 
 sub row_apply {
-  my ( $self, $code) = @_;
+  my ( $self, $code ) = @_;
 
   my @res;
   my $assay = $self->assay;
   for ( my $i = 0; $i < @$assay; $i++ ) {
+    local $_ = $assay->[$i];
     push @res, $code->( $self, $assay->[$i] );
   }
   return \@res;
 }
+
 sub col_apply {
   my ( $self, $code ) = @_;
 
   my @res;
-  my @assay_t    = MapCarU { [@_] } @{ $self->{assay} };
+  my @assay_t = MapCarU { [@_] } @{ $self->{assay} };
 
   for ( my $i = 0; $i < @assay_t; $i++ ) {
+    local $_ = $assay_t->[$i];
     push @res, $code->( $self, $assay_t[$i] );
   }
   return \@res;
 }
 
 sub apply {
-  my ($self, $dir, $code, @args)  = @_;
+  my ( $self, $dir, $code, @args ) = @_;
 
-  if($dir eq 'r' || $dir == 1) {
-    return $self->row_apply($code, @args);
-  } elsif($dir eq 'c' || $dir == 2) {
-    return $self->col_apply($code, @args);
-  } elsif($dir eq 'rc' || $dir eq 'cr' || $dir == 3) {
+  if ( $dir eq 'r' || $dir == 1 ) {
+    return $self->row_apply( $code, @args );
+  } elsif ( $dir eq 'c' || $dir == 2 ) {
+    return $self->col_apply( $code, @args );
+  } elsif ( $dir eq 'rc' || $dir eq 'cr' || $dir == 3 ) {
     # cell apply
   }
 }
