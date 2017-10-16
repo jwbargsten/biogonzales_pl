@@ -8,10 +8,12 @@ use Carp;
 use v5.11;
 use IO::Handle ();
 
-use List::MoreUtils qw/firstidx indexes uniq any/;
+use List::MoreUtils qw/firstidx indexes any/;
 use List::Util qw/max/;
 use Bio::Gonzales::Matrix::IO qw/mspew mslurp/;
 use Algorithm::Loops qw/MapCarU/;
+
+use Bio::Gonzales::Matrix::Util;
 
 use Data::Dumper;
 
@@ -64,21 +66,43 @@ sub spew_assay {
   return $self;
 }
 
-sub sort {
-  my ( $self, $code ) = @_;
+sub _reorder {
+  my $self = shift;
+  my $idcs = shift;
 
-  my $assay     = $self->assay;
-  my $row_names = $self->row_names;
-  my $row_data  = $self->row_data;
+  my $assay          = $self->assay;
+  my $row_names      = $self->row_names;
+  my $row_data       = $self->row_data;
+  my $row_data_names = $self->row_data_names;
+
+  $self->assay(          [ @{$assay}[@$idcs] ] );
+  $self->row_names(      [ @{$row_names}[@$idcs] ] ) if (@$row_names);
+  $self->row_data(       [ @{$row_data}[@$idcs] ] ) if (@$row_data);
+  $self->row_data_names( [ @{$row_data_names}[@$idcs] ] ) if (@$row_data_names);
+
+  return $self;
+}
+
+sub sort {
+  my $self = shift;
+  my $code = shift;
+
+  my $assay = $self->assay;
+  my $nrow  = $self->nrow;
+  my @idcs  = 0 .. ( $nrow - 1 );
+  @idcs = sort { $code->( $assay->[$a], $assay->[$b] ) } @idcs;
+
+  return $self->_reorder( \@idcs, @_ );
+}
+
+sub shuffle {
+  my $self = shift;
 
   my $nrow = $self->nrow;
   my @idcs = 0 .. ( $nrow - 1 );
-  @idcs = sort { $code->( $assay->[$a], $assay->[$b] ) } @idcs;
-  $self->assay(     [ @{$assay}[@idcs] ] );
-  $self->row_names( [ @{$row_names}[@idcs] ] ) if (@$row_names);
-  $self->row_data(  [ @{$row_data}[@idcs] ] ) if (@$row_data);
+  @idcs = List::Util::shuffle(@idcs);
 
-  return $self;
+  return $self->_reorder( \@idcs, @_ );
 }
 
 sub row_idx { shift->_idx( 'row_names', @_ ) }
@@ -182,32 +206,7 @@ sub add_cols {
 }
 
 sub group {
-  my ( $self, $idcs ) = @_;
-
-  my $assay          = $self->assay;
-  my $row_names      = $self->row_names;
-  my $row_data       = $self->row_data;
-  my $row_data_names = $self->row_data_names;
-  my %groups;
-  my @key_names = @{ $self->col_names }[@$idcs];
-  for ( my $i = 0; $i < @$assay; $i++ ) {
-    my @key = @{ $assay->[$i] }[@$idcs];
-    my $key = join( $;, @key );
-    $groups{$key} //= {
-      idcs           => [],
-      rows           => [],
-      key            => \@key,
-      key_names      => \@key_names,
-      row_names      => [],
-      row_data       => [],
-      row_data_names => $row_data_names
-    };
-    push @{ $groups{$key}{idcs} },      $i;
-    push @{ $groups{$key}{rows} },      $assay->[$i];
-    push @{ $groups{$key}{row_names} }, $row_names->[$i] if ( $row_names && @$row_names );
-    push @{ $groups{$key}{row_data} },  $row_data->[$i] if ( $row_data && @$row_data );
-  }
-  return \%groups;
+  return shift->group_by_idcs(@_);
 }
 
 sub ncol {
@@ -231,6 +230,7 @@ sub subset {
   my @assay_new;
   my @row_data_new;
   for ( my $i = 0; $i < @$assay; $i++ ) {
+    local $_ = $assay->[$i];
     if ( $code->( $self, $assay->[$i], $row_names->[$i], $row_data->[$i] ) ) {
       push @assay_new,     Clone::clone( $assay->[$i] );
       push @row_names_new, Clone::clone( $row_names->[$i] ) if ( $row_names && @$row_names );
@@ -290,7 +290,7 @@ sub merge {
   my @row_names_new;
   my @assay_new;
   my @row_data_new;
-  my @keys = uniq( keys(%$groups_x), keys(%$groups_y) );
+  my @keys = List::MoreUtils::uniq( keys(%$groups_x), keys(%$groups_y) );
   my $inv_by_y = _invert_idcs( $se_y->ncol, $idcs_y );
   for my $k (@keys) {
     my $data_x = $groups_x->{$k};
@@ -482,17 +482,23 @@ sub aggregate_by_idcs {
 
   my @agg_assay;
   my @agg_row_names;
+  my @agg_row_data;
+  my @agg_row_data_names;
   for my $v ( values %$row_groups ) {
-    my ( $row, $row_name )
+    my ( $row, $row_name, $row_data, $row_data_name )
       = $code->( $self, $v->{key}, $v->{rows}, { names => $v->{key_names}, row_idcs => $v->{idcs} } );
-    push @agg_assay, $row;
-    push @agg_row_names, $row_name if ( defined($row_name) );
+    push @agg_assay,          $row;
+    push @agg_row_names,      $row_name if ( defined($row_name) );
+    push @agg_row_data,       $row_data if ( defined($row_data) );
+    push @agg_row_data_names, $row_data_name if ( defined($row_data_name) );
   }
 
   return __PACKAGE__->new(
-    assay     => \@agg_assay,
-    col_names => $col_names // [],
-    row_names => \@agg_row_names
+    assay          => \@agg_assay,
+    col_names      => $col_names // [],
+    row_names      => \@agg_row_names,
+    row_data_names => \@agg_row_data_names,
+    row_data       => \@agg_row_data,
   );
 }
 
@@ -514,71 +520,34 @@ sub aggregate_by_names {
   return $self->aggregate_by_idcs( $idcs, $code, $col_names );
 }
 
-sub group_by_names {
-  my $self = shift;
-  my $names = shift;
+sub group_by_idcs {
+  my ( $self, $idcs, $args ) = @_;
 
-  my $idcs = $self->col_names_to_idcs($names);
-
-  return $self->group($idcs, @_);
+  my $assay          = $self->assay;
+  my $row_names      = $self->row_names;
+  my $row_data       = $self->row_data;
+  my $row_data_names = $self->row_data_names;
+  my %groups;
+  my @key_names = @{ $self->col_names }[@$idcs];
+  for ( my $i = 0; $i < @$assay; $i++ ) {
+    my @key = @{ $assay->[$i] }[@$idcs];
+    my $key = join( $;, @key );
+    $groups{$key} //= {
+      idcs           => [],
+      rows           => [],
+      key            => \@key,
+      key_names      => \@key_names,
+      row_names      => [],
+      row_data       => [],
+      row_data_names => $row_data_names
+    };
+    push @{ $groups{$key}{idcs} },      $i;
+    push @{ $groups{$key}{rows} },      $assay->[$i];
+    push @{ $groups{$key}{row_names} }, $row_names->[$i] if ( $row_names && @$row_names );
+    push @{ $groups{$key}{row_data} },  $row_data->[$i] if ( $row_data && @$row_data );
+  }
+  return \%groups;
 }
-
-sub names_to_idcs {
-  return shift->col_names_to_idcs(@_);
-}
-
-sub col_idx_map {
-  my $i = 0;
-  return { map { $_ => $i++ } @{ shift->col_names } };
-}
-
-sub row_idx_map {
-  my $i = 0;
-  return { map { $_ => $i++ } @{ shift->row_names } };
-}
-
-# from dict_slurp
-#sub group {
-#my $self = shift;
-#my %c = @_;
-
-#for my $k (qw/key_names val_names key_idcs val_idcs key_idx val_idx/) {
-#$c{$k} = [ $c{$k} ] if($c{$k} && !(ref $c{$k}));
-#}
-
-#$c{key_idx} //= $c{key_idcs};
-#$c{val_idx} //= $c{val_idcs};
-
-#croak "you have not specified key_idx"
-#unless ( exists( $c{key_idx} ) );
-
-#my $is_strict     = $c{strict};
-
-## concatenate keys to a big string
-#my @kidcs;
-#if ( $c{concat_keys} || !ref( $c{key_idx} ) ) {
-#@kidcs = ( $c{key_idx} );
-#} else {
-## or treat them separately
-#@kidcs = @{ $c{key_idx} };
-#}
-
-#my $vidx = $c{val_idx};
-## make an array from it
-
-#my $uniq = $c{uniq} // $c{uniq_vals} // $c{unique} // 0;
-
-#my $assay = $self->assay;
-
-#my %map;
-#for my $r (@$assay) {
-
-#for my $kidx (@kidcs) {
-
-#my @k = ( ref $kidx ? @{$r}[@$kidx] : $r->[$kidx] );
-#@k = map { $_ // '' } @k;
-#@k = sort @k if ( $c{sort_keys} );
-#my $k = join( $;, @k ) // '';
 
 #if ( $uniq && !defined($vidx) ) {
 #$map{$k} = 1;
@@ -595,6 +564,29 @@ sub row_idx_map {
 #}
 #return \%map;
 #}
+
+sub group_by_names {
+  my $self  = shift;
+  my $names = shift;
+
+  my $idcs = $self->col_names_to_idcs($names);
+
+  return $self->group( $idcs, @_ );
+}
+
+sub names_to_idcs {
+  return shift->col_names_to_idcs(@_);
+}
+
+sub col_idx_map {
+  my $i = 0;
+  return { map { $_ => $i++ } @{ shift->col_names } };
+}
+
+sub row_idx_map {
+  my $i = 0;
+  return { map { $_ => $i++ } @{ shift->row_names } };
+}
 
 sub col_rename {
   my ( $self, $old, $new ) = @_;
@@ -702,12 +694,25 @@ sub slice_by_names {
   return $self->slice_by_idcs($idcs);
 }
 
+sub each {
+  shift->apply( 1, @_ );
+}
+
+sub uniq {
+  my $self = shift;
+
+  my %seen;
+  return $self->subset(
+    sub {
+      return if ( $seen{ join $;, @$_ }++ );
+      return 1;
+    }
+  );
+}
+
+# sub grep -> subset
 # from Mojo::Collection
-# shuffle
-# each
-# grep
 # first
 # last
-# uniq
 
 1;
