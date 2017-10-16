@@ -151,6 +151,7 @@ sub cbind {
 
   if ( ref $data eq 'CODE' ) {
     for ( my $i = 0; $i < @$assay; $i++ ) {
+      local $_ = $assay->[$i];
       push @{ $assay->[$i] }, $data->( $self, $assay->[$i] );
     }
   } elsif ( ref $data eq 'ARRAY' ) {
@@ -470,6 +471,10 @@ sub _na_fill_1d {
 
 sub add_rows { shift->rbind(@_) }
 
+sub aggregate {
+  return shift->aggregate_by_idcs(@_);
+}
+
 sub aggregate_by_idcs {
   my ( $self, $idcs, $code, $col_names ) = @_;
 
@@ -509,6 +514,15 @@ sub aggregate_by_names {
   return $self->aggregate_by_idcs( $idcs, $code, $col_names );
 }
 
+sub group_by_names {
+  my $self = shift;
+  my $names = shift;
+
+  my $idcs = $self->col_names_to_idcs($names);
+
+  return $self->group($idcs, @_);
+}
+
 sub names_to_idcs {
   return shift->col_names_to_idcs(@_);
 }
@@ -516,6 +530,11 @@ sub names_to_idcs {
 sub col_idx_map {
   my $i = 0;
   return { map { $_ => $i++ } @{ shift->col_names } };
+}
+
+sub row_idx_map {
+  my $i = 0;
+  return { map { $_ => $i++ } @{ shift->row_names } };
 }
 
 # from dict_slurp
@@ -605,7 +624,7 @@ sub col_apply {
   my @assay_t = MapCarU { [@_] } @{ $self->{assay} };
 
   for ( my $i = 0; $i < @assay_t; $i++ ) {
-    local $_ = $assay_t->[$i];
+    local $_ = $assay_t[$i];
     push @res, $code->( $self, $assay_t[$i] );
   }
   return \@res;
