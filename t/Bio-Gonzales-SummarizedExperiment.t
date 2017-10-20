@@ -96,6 +96,18 @@ my $se2 = Bio::Gonzales::SummarizedExperiment->new(
   ],
 );
 
+is_deeply(
+  $se2->subset( [ 0, 1 ] )->assay,
+  [
+    [ 2, 2, 3 ],             #
+    [qw/d e f/],
+  ]
+);
+
+is_deeply( $se2->subset( sub { $_->[0] eq '2' } )->assay, [ [ 2, 2, 3 ], ] );
+is_deeply( $se2->subset( sub { $_->[0] eq '2' } )->row_data,  [ [qw/r1d1 r1d2 r1d3/] ] );
+is_deeply( $se2->subset( sub { $_->[0] eq '2' } )->row_names, [qw/rn1/] );
+
 my $sem;
 $sem = $se1->merge( $se2, { by_x => [qw/cn1/], by_y => [qw/ckn1/] } )->sort( sub { $_[0][0] cmp $_[1][0] } );
 

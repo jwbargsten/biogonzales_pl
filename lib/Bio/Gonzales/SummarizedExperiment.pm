@@ -38,7 +38,7 @@ sub header { shift->col_names(@_) }
 sub slurp_assay {
   my $class = shift;
 
-  my ($m, $cn, $rn) =  mslurp(@_);
+  my ( $m, $cn, $rn ) = mslurp(@_);
   $cn //= [];
   $rn //= [];
   return $class->new( assay => $m, col_names => $cn, row_names => $rn );
@@ -74,7 +74,7 @@ sub _reorder {
 
 sub sort {
   my $self = shift;
-  my $cb = shift;
+  my $cb   = shift;
 
   my $assay = $self->assay;
   my $nrow  = $self->nrow;
@@ -103,15 +103,15 @@ sub _idx {
 }
 
 sub row_idx {
-  my ($self, $name) = @_;
-  return -1 unless($name);
-  return firstidx { $_ eq $name } @{ $self->row_names};
+  my ( $self, $name ) = @_;
+  return -1 unless ($name);
+  return firstidx { $_ eq $name } @{ $self->row_names };
 }
 
 sub col_idx {
-  my ($self, $name) = @_;
-  return -1 unless($name);
-  return firstidx { $_ eq $name } @{ $self->col_names};
+  my ( $self, $name ) = @_;
+  return -1 unless ($name);
+  return firstidx { $_ eq $name } @{ $self->col_names };
 }
 
 sub transpose {
@@ -135,22 +135,22 @@ sub transpose {
 sub make_consistent { die 'function not implemented, yet'; }
 
 sub _idx_grep {
-  my ($self, $names, $cb) = (shift, shift, shift);
+  my ( $self, $names, $cb ) = ( shift, shift, shift );
 
   return [ indexes { $_ =~ $cb } @$names ] if ref $cb eq 'Regexp';
   return [ indexes { $cb->($_) } @$names ];
 }
 
-sub row_idx_grep { 
+sub row_idx_grep {
   my $self = shift;
-  
-  return $self->_idx_grep( $self->row_names, @_ ) 
+
+  return $self->_idx_grep( $self->row_names, @_ );
 }
 
 sub col_idx_grep {
   my $self = shift;
-  
-  return $self->_idx_grep($self->col_names, @_ );
+
+  return $self->_idx_grep( $self->col_names, @_ );
 }
 
 sub add_col {
@@ -255,19 +255,26 @@ sub subset {
   my $row_data       = $self->row_data;
   my $row_data_names = $self->row_data_names;
 
+  my $idcs;
+  if ( ref $cb eq 'CODE' ) {
+    for ( my $i = 0; $i < @$assay; $i++ ) {
+      local $_ = $assay->[$i];
+      push @$idcs, $i if ( $cb->( $assay->[$i], $i ) );
+    }
+  } elsif ( ref $cb eq 'ARRAY' ) {
+    $idcs = $cb;
+  }
+
   my @row_names_new;
   my @assay_new;
   my @row_data_new;
 
-
-  for ( my $i = 0; $i < @$assay; $i++ ) {
-    local $_ = $assay->[$i];
-    if ( $cb->( $assay->[$i], $i) {
-      push @assay_new,     Clone::clone( $assay->[$i] );
-      push @row_names_new, Clone::clone( $row_names->[$i] ) if ( $row_names && @$row_names );
-      push @row_data_new,  Clone::clone( $row_data->[$i] ) if ( $row_data && @$row_data );
-    }
+  for my $i (@$idcs) {
+    push @assay_new,     Clone::clone( $assay->[$i] );
+    push @row_names_new, Clone::clone( $row_names->[$i] ) if ( $row_names && @$row_names );
+    push @row_data_new,  Clone::clone( $row_data->[$i] ) if ( $row_data && @$row_data );
   }
+
   return __PACKAGE__->new(
     assay          => \@assay_new,
     row_names      => \@row_names_new,
@@ -642,15 +649,15 @@ sub col_idx_map {
   my $i = 0;
   my %I = ( map { $_ => $i++ } @{ shift->col_names } );
 
-  return unless(%I);
+  return unless (%I);
   return wantarray ? %I : \%I;
 }
 
 sub row_idx_map {
   my $i = 0;
-  my %I =( map { $_ => $i++ } @{ shift->row_names } ); 
+  my %I = ( map { $_ => $i++ } @{ shift->row_names } );
 
-  return unless(%I);
+  return unless (%I);
   return wantarray ? %I : \%I;
 }
 
