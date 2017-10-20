@@ -16,6 +16,7 @@ use Algorithm::Loops qw/MapCarU/;
 use Bio::Gonzales::Matrix::Util;
 
 use Data::Dumper;
+use JSON::XS;
 
 use Clone;
 
@@ -30,29 +31,17 @@ our $NA_VALUE = 'NA';
 has [qw/assay col_data row_data row_names col_names row_data_names col_data_names meta_data/] =>
   ( is => 'rw', default => sub { [] } );
 
-sub data   { shift->assay(@_) }
+sub data { shift->assay(@_) }
+
 sub header { shift->col_names(@_) }
-
-sub _idx {
-  my ( $self, $m, $name ) = @_;
-  unless ($name) {
-    carp "$name not found in column names";
-    return -1;
-  }
-  firstidx { $_ eq $name } @{ $self->$m };
-}
-
-sub new_from_mslurp {
-  my ( $class, $m, $cn, $rn ) = @_;
-  $cn //= [];
-  $rn //= [];
-  return $class->new( assay => $m, col_names => $cn, row_names => $rn );
-}
 
 sub slurp_assay {
   my $class = shift;
 
-  return $class->new_from_mslurp( mslurp(@_) );
+  my ($m, $cn, $rn) =  mslurp(@_);
+  $cn //= [];
+  $rn //= [];
+  return $class->new( assay => $m, col_names => $cn, row_names => $rn );
 }
 
 sub spew_assay {
@@ -85,12 +74,12 @@ sub _reorder {
 
 sub sort {
   my $self = shift;
-  my $code = shift;
+  my $cb = shift;
 
   my $assay = $self->assay;
   my $nrow  = $self->nrow;
   my @idcs  = 0 .. ( $nrow - 1 );
-  @idcs = sort { $code->( $assay->[$a], $assay->[$b] ) } @idcs;
+  @idcs = sort { $cb->( $assay->[$a], $assay->[$b], $a, $b ) } @idcs;
 
   return $self->_reorder( \@idcs, @_ );
 }
@@ -105,11 +94,25 @@ sub shuffle {
   return $self->_reorder( \@idcs, @_ );
 }
 
-sub row_idx { shift->_idx( 'row_names', @_ ) }
+sub _idx {
+  my ( $self, $m, $name ) = @_;
+  unless ($name) {
+    return -1;
+  }
+  firstidx { $_ eq $name } @{ $self->$m };
+}
 
-sub col_idx { shift->_idx( 'col_names', @_ ) }
+sub row_idx {
+  my ($self, $name) = @_;
+  return -1 unless($name);
+  return firstidx { $_ eq $name } @{ $self->row_names};
+}
 
-sub header_idx { shift->col_idx(@_) }
+sub col_idx {
+  my ($self, $name) = @_;
+  return -1 unless($name);
+  return firstidx { $_ eq $name } @{ $self->col_names};
+}
 
 sub transpose {
   my $self = shift;
@@ -129,21 +132,25 @@ sub transpose {
   );
 }
 
-sub make_consistent {
+sub make_consistent { die 'function not implemented, yet'; }
 
+sub _idx_grep {
+  my ($self, $names, $cb) = (shift, shift, shift);
+
+  return [ indexes { $_ =~ $cb } @$names ] if ref $cb eq 'Regexp';
+  return [ indexes { $cb->($_) } @$names ];
 }
 
-sub _idx_match {
-  my ( $self, $m, $rex ) = @_;
-  [ indexes { $_ =~ /$rex/ } @{ $self->$m } ];
+sub row_idx_grep { 
+  my $self = shift;
+  
+  return $self->_idx_grep( $self->row_names, @_ ) 
 }
 
-sub row_idx_match { shift->_idx_match( 'row_names', @_ ) }
-
-sub col_idx_match { shift->_idx_match( 'col_names', @_ ) }
-
-sub header_idx_match {
-  shift->col_idx_match(@_);
+sub col_idx_grep {
+  my $self = shift;
+  
+  return $self->_idx_grep($self->col_names, @_ );
 }
 
 sub add_col {
@@ -176,7 +183,7 @@ sub cbind {
   if ( ref $data eq 'CODE' ) {
     for ( my $i = 0; $i < @$assay; $i++ ) {
       local $_ = $assay->[$i];
-      push @{ $assay->[$i] }, $data->( $self, $assay->[$i] );
+      push @{ $assay->[$i] }, $data->( $assay->[$i], $i );
     }
   } elsif ( ref $data eq 'ARRAY' ) {
     die "number of rows differ" unless ( @$data == @$assay );
@@ -202,7 +209,7 @@ sub cbind {
 }
 
 sub add_cols {
-  shift->cbind(@_);
+  die 'function not implemented, yet';
 }
 
 sub group {
@@ -218,8 +225,30 @@ sub ncol {
 
 sub nrow { scalar @{ shift->assay }; }
 
+sub as_hash {
+  my $self = shift;
+  my %data;
+  for my $entry (qw/assay col_data row_data row_names col_names row_data_names col_data_names meta_data/) {
+    $data{$entry} = $self->$entry;
+  }
+  return \%data;
+}
+
+sub to_json {
+  my $self = shift;
+  my $js   = JSON::XS->new->utf8->allow_nonref->indent(1);    #->canonical(1);
+  return $js->encode( $self->as_hash );
+}
+
+sub json_spew {
+  my ( $self, $f ) = @_;
+  open my $fh, '>', $f or die "Can't open filehandle: $!";
+  print $fh $self->to_json;
+  close $fh;
+}
+
 sub subset {
-  my ( $self, $code ) = @_;
+  my ( $self, $cb ) = @_;
 
   my $assay          = $self->assay;
   my $row_names      = $self->row_names;
@@ -229,9 +258,11 @@ sub subset {
   my @row_names_new;
   my @assay_new;
   my @row_data_new;
+
+
   for ( my $i = 0; $i < @$assay; $i++ ) {
     local $_ = $assay->[$i];
-    if ( $code->( $self, $assay->[$i], $row_names->[$i], $row_data->[$i] ) ) {
+    if ( $cb->( $assay->[$i], $i) {
       push @assay_new,     Clone::clone( $assay->[$i] );
       push @row_names_new, Clone::clone( $row_names->[$i] ) if ( $row_names && @$row_names );
       push @row_data_new,  Clone::clone( $row_data->[$i] ) if ( $row_data && @$row_data );
@@ -395,14 +426,43 @@ sub clone {
 }
 
 sub rbind {
+  my $self           = shift;
+  my $row_elems      = shift;
+  my $names          = shift;
+  my $row_data_elems = shift;
+
+  my $col_names      = $self->col_names;
+  my $row_data_names = $self->row_data_names;
+
+  my @rows;
+  for my $o (@$row_elems) {
+    if ( ref $o eq 'ARRAY' ) {
+      push @rows, $o;
+    } else {
+      push @rows, [ @{$o}{@$col_names} ];
+    }
+  }
+  my @row_data;
+  for my $o (@$row_data_elems) {
+    if ( ref $o eq 'ARRAY' ) {
+      push @row_data, $o;
+    } else {
+      push @row_data, [ @{$o}{@$col_names} ];
+    }
+  }
+
+  return $self->_rbind( \@rows, $names, \@row_data );
+}
+
+sub _rbind {
   my ( $self, $rows, $names, $row_data ) = @_;
 
   my $nrow = $self->nrow;
+  # FIXME check if all input params have the same length
 
   push @{ $self->assay }, @$rows;
 
   if ( $names && @$names ) {
-
     $self->row_names->[ $nrow - 1 ] //= undef if ( $nrow > 0 );
     push @{ $self->row_names }, @$names;
   }
@@ -476,7 +536,7 @@ sub aggregate {
 }
 
 sub aggregate_by_idcs {
-  my ( $self, $idcs, $code, $col_names ) = @_;
+  my ( $self, $idcs, $cb, $col_names ) = @_;
 
   my $row_groups = $self->group($idcs);
 
@@ -486,7 +546,7 @@ sub aggregate_by_idcs {
   my @agg_row_data_names;
   for my $v ( values %$row_groups ) {
     my ( $row, $row_name, $row_data, $row_data_name )
-      = $code->( $self, $v->{key}, $v->{rows}, { names => $v->{key_names}, row_idcs => $v->{idcs} } );
+      = $cb->( $v->{key}, $v->{rows}, { names => $v->{key_names}, row_idcs => $v->{idcs} } );
     push @agg_assay,          $row;
     push @agg_row_names,      $row_name if ( defined($row_name) );
     push @agg_row_data,       $row_data if ( defined($row_data) );
@@ -514,10 +574,10 @@ sub col_names_to_idcs {
 }
 
 sub aggregate_by_names {
-  my ( $self, $names, $code, $col_names ) = @_;
+  my ( $self, $names, $cb, $col_names ) = @_;
   my $idcs = $self->col_names_to_idcs($names);
 
-  return $self->aggregate_by_idcs( $idcs, $code, $col_names );
+  return $self->aggregate_by_idcs( $idcs, $cb, $col_names );
 }
 
 sub group_by_idcs {
@@ -580,12 +640,18 @@ sub names_to_idcs {
 
 sub col_idx_map {
   my $i = 0;
-  return { map { $_ => $i++ } @{ shift->col_names } };
+  my %I = ( map { $_ => $i++ } @{ shift->col_names } );
+
+  return unless(%I);
+  return wantarray ? %I : \%I;
 }
 
 sub row_idx_map {
   my $i = 0;
-  return { map { $_ => $i++ } @{ shift->row_names } };
+  my %I =( map { $_ => $i++ } @{ shift->row_names } ); 
+
+  return unless(%I);
+  return wantarray ? %I : \%I;
 }
 
 sub col_rename {
@@ -598,37 +664,37 @@ sub col_rename {
 }
 
 sub row_apply {
-  my ( $self, $code ) = @_;
+  my ( $self, $cb ) = @_;
 
   my @res;
   my $assay = $self->assay;
   for ( my $i = 0; $i < @$assay; $i++ ) {
     local $_ = $assay->[$i];
-    push @res, $code->( $self, $assay->[$i] );
+    push @res, $cb->( $assay->[$i], $i );
   }
   return \@res;
 }
 
 sub col_apply {
-  my ( $self, $code ) = @_;
+  my ( $self, $cb ) = @_;
 
   my @res;
   my @assay_t = MapCarU { [@_] } @{ $self->{assay} };
 
   for ( my $i = 0; $i < @assay_t; $i++ ) {
     local $_ = $assay_t[$i];
-    push @res, $code->( $self, $assay_t[$i] );
+    push @res, $cb->( $assay_t[$i], $i );
   }
   return \@res;
 }
 
 sub apply {
-  my ( $self, $dir, $code, @args ) = @_;
+  my ( $self, $dir, $cb, @args ) = @_;
 
   if ( $dir eq 'r' || $dir == 1 ) {
-    return $self->row_apply( $code, @args );
+    return $self->row_apply( $cb, @args );
   } elsif ( $dir eq 'c' || $dir == 2 ) {
-    return $self->col_apply( $code, @args );
+    return $self->col_apply( $cb, @args );
   } elsif ( $dir eq 'rc' || $dir eq 'cr' || $dir == 3 ) {
     # cell apply
   }
@@ -716,3 +782,157 @@ sub uniq {
 # last
 
 1;
+
+__END__
+
+=head1 NAME
+
+Bio::Gonzales::SummarizedExperiment - represent experimental matrix-like data (assay) with features and sample info
+
+=head1 SYNOPSIS
+
+
+=head1 DESCRIPTION
+
+L<http://bioconductor.org/packages/devel/bioc/vignettes/SummarizedExperiment/inst/doc/SummarizedExperiment.html>
+
+=head1 ATTRIBUTES
+
+=head2 assay
+
+    my $assay = $se->assay;
+
+Return the assay of the summarized experiment.
+
+=head2 col_data
+
+    my $col_data = $se->col_data;
+    $se->col_data(\@col_data);
+
+=head2 row_data
+
+=head2 row_names
+
+=head2 col_names
+
+=head2 row_data_names
+
+=head2 col_data_names
+
+=head2 meta_data
+
+=head1 METHODS
+
+=head2 data
+
+    my $assay = $se->data;
+
+A alias for assay.
+
+=head2 add_col
+
+=head2 add_cols
+
+=head2 add_rows
+
+=head2 aggregate
+
+=head2 aggregate_by_idcs
+
+=head2 aggregate_by_names
+
+=head2 apply
+
+=head2 as_hash
+
+=head2 cbind
+
+=head2 clone
+
+=head2 col_apply
+
+=head2 col_idx
+
+=head2 col_idx_map
+
+    my $I = $se->col_idx_map;
+    my %I = $se->col_idx_map;
+
+Returns a hash that maps the column names to their column index. col_idx_map is context
+sensitve and returns a hash in list context and a hash reference in scalar context.
+
+=head2 col_idx_match
+
+=head2 col_names_to_idcs
+
+=head2 col_rename
+
+
+=head2 dim
+
+=head2 each
+
+=head2 extract_col_by_idx
+
+=head2 extract_col_by_name
+
+=head2 group
+
+=head2 group_by_idcs
+
+=head2 group_by_names
+
+=head2 has_col_data
+
+=head2 has_col_names
+=head2 has_row_data
+=head2 has_row_names
+=head2 header
+=head2 header_idx
+=head2 header_idx_match
+=head2 inconsistencies
+=head2 json_spew
+=head2 make_consistent
+=head2 merge
+=head2 names_to_idcs
+=head2 ncol
+=head2 nrow
+=head2 rbind
+=head2 row_apply
+=head2 row_idx
+=head2 row_idx_map
+=head2 row_idx_match
+=head2 shuffle
+=head2 slice_by_idcs
+=head2 slice_by_names
+=head2 slurp_assay
+=head2 sort
+=head2 spew_assay
+=head2 subset
+=head2 to_json
+=head2 transpose
+=head2 uniq
+
+=head1 LIMITATIONS
+
+=head1 NOTES
+
+By convention,
+
+=over 4
+
+=item * constructor or function arguments ending in C<?> are optional
+
+=item * methods ending in C<!> will modify the object it is called on
+
+=back
+
+=head1 SEE ALSO
+
+=head1 AUTHOR
+
+jw bargsten, C<< <jwb at cpan dot org> >>
+
+=cut
+
+

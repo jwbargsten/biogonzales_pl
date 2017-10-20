@@ -14,12 +14,48 @@ our $VERSION = 0.01_01;
 with 'Bio::Gonzales::Util::Role::FileIO';
 
 has meta       => ( is => 'rw', default => sub { {} } );
-has sample_ids => ( is => 'rw', default => sub { [] } );
+has samples => ( is => 'rw', default => sub { [] } );
 has _wrote_sth_before => ( is => 'rw' );
 
-sub samples { shift->sample_ids }
+sub sample_ids { shift->samples }
+
+sub sample_idx2id {
+  my $ids = shift->samples;
+
+  my %map;
+  for(my $i = 0; $i < @$ids; $i++) {
+    $map{$i} = $ids->[$i];
+  }
+
+  return \%map;
+}
+sub sample_id2idx {
+  my $ids = shift->samples;
+
+  my %map;
+  for(my $i = 0; $i < @$ids; $i++) {
+    $map{$ids->[$i]} = $i;
+  }
+
+  return \%map;
+}
+
 # stay consistent with GFF3 io
 sub pragmas { shift->meta(@_) }
+
+sub contigs {
+  my $self = shift;
+
+  my $ctgs_raw = $self->meta->{contig};
+
+  my @ctgs;
+  for my $ctg (@$ctgs_raw) {
+    $ctg =~ s/^<//;
+    $ctg =~ s/>$//;
+    push @ctgs, { map { split /=/, $_, 2 } split /,/, $ctg };
+  }
+  return \@ctgs;
+}
 
 sub BUILD {
   my ($self) = @_;
@@ -49,7 +85,7 @@ sub format_header {
     }
   }
   $res .= "#"
-    . join( "\t", qw/CHROM POS ID  REF ALT QUAL  FILTER  INFO  FORMAT/, @{ $self->sample_ids } ) . "\n";
+    . join( "\t", qw/CHROM POS ID  REF ALT QUAL  FILTER  INFO  FORMAT/, @{ $self->samples } ) . "\n";
   return $res;
 }
 
@@ -89,7 +125,7 @@ sub _parse_header {
   push @{ $self->_cached_records }, $l;
 
   $self->meta( \%meta );
-  $self->sample_ids( \@sample_ids );
+  $self->samples( \@sample_ids );
 
   return;
 }
