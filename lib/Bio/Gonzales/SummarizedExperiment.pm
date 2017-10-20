@@ -552,9 +552,10 @@ sub aggregate_by_idcs {
   my @agg_row_data;
   my @agg_row_data_names;
   for my $v ( values %$row_groups ) {
+    local $_ = $v;
     my ( $row, $row_name, $row_data, $row_data_name )
-      = $cb->( $v->{key}, $v->{rows}, { names => $v->{key_names}, row_idcs => $v->{idcs} } );
-    push @agg_assay,          $row;
+      = $cb->( $v->{key}, $v->{rows}, $v->{idcs});
+    push @agg_assay,          $row if(defined($row));
     push @agg_row_names,      $row_name if ( defined($row_name) );
     push @agg_row_data,       $row_data if ( defined($row_data) );
     push @agg_row_data_names, $row_data_name if ( defined($row_data_name) );
@@ -645,13 +646,15 @@ sub names_to_idcs {
   return shift->col_names_to_idcs(@_);
 }
 
-sub col_idx_map {
+sub c2i {
   my $i = 0;
   my %I = ( map { $_ => $i++ } @{ shift->col_names } );
 
   return unless (%I);
   return wantarray ? %I : \%I;
 }
+
+sub col_idx_map { shift->c2i }
 
 sub row_idx_map {
   my $i = 0;
@@ -844,9 +847,17 @@ A alias for assay.
 
 =head2 aggregate
 
-=head2 aggregate_by_idcs
+=head2 C<< $se = $se->aggregate_by_idcs(\@idcs, sub { ... }, \@col_names)
 
-=head2 aggregate_by_names
+The callback gets passed the grouping keys, rows and row indices. C<$_> is set to the
+group has that comes from the (internally used) C<< $se->group >> function.
+
+    sub {
+      my ($key, $rows, $row_idcs) = @_;
+      my $group = $_;
+    }
+
+=head2 C<< $se = $se->aggregate_by_names(\@names, sub { ... }, \@col_names)
 
 =head2 apply
 
