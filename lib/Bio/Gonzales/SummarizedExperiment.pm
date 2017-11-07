@@ -234,7 +234,7 @@ sub as_hash {
   return \%data;
 }
 
-sub to_json {
+sub encode_as_json {
   my $self = shift;
   my $js   = JSON::XS->new->utf8->allow_nonref->indent(1);    #->canonical(1);
   return $js->encode( $self->as_hash );
@@ -243,7 +243,7 @@ sub to_json {
 sub json_spew {
   my ( $self, $f ) = @_;
   open my $fh, '>', $f or die "Can't open filehandle: $!";
-  print $fh $self->to_json;
+  print $fh $self->encode_as_json;
   close $fh;
 }
 
@@ -928,7 +928,7 @@ sensitve and returns a hash in list context and a hash reference in scalar conte
 =head2 sort
 =head2 spew_assay
 =head2 subset
-=head2 to_json
+=head2 encode_as_json
 =head2 transpose
 =head2 uniq
 
