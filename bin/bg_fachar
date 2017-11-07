@@ -23,7 +23,7 @@ my ( $opt, $usage ) = describe_options(
   '%c %o <file>', [],
   [ 'threads|t=i', "use threads", { default => 1 } ],
   [ 'help',        "print usage message and exit" ],
-  [ 'by_seq',        "print counts by sequence" ],
+  [ 'by_seq',      "print counts by sequence" ],
 );
 
 print( $usage->text ), exit if $opt->help;
@@ -37,30 +37,26 @@ my $tq = Thread::Task::Concurrent->new( task => \&task, max_instances => $opt->t
 my $iterator = faiterate($file);
 
 while ( my $s = $iterator->() ) {
-  $tq->enqueue( [$s->id, $s->seq] );
+  $tq->enqueue( [ $s->id, $s->seq ] );
 }
 my $res = $tq->join->result;
 
 my %counts;
 for my $r (@$res) {
-  my ($id, $counts_by_seq) = @$r;
+  my ( $id, $counts_by_seq ) = @$r;
   my $total = sum values %$counts_by_seq;
-  say $js->encode({$id => { '_' => $total, %$counts_by_seq}}) if($opt->by_seq);
+  say $js->encode( { seq_id => $id, '_' => $total, %$counts_by_seq } ) if ( $opt->by_seq );
   while ( my ( $c, $count ) = each %$counts_by_seq ) {
     $counts{$c} += $count;
   }
 }
 my @chars = sort keys %counts;
-my $total;
-for my $k (@chars) {
-  say "    $k => $counts{$k}";
-  $total += $counts{$k};
-}
-say "    _total_ => $total";
+my $total = sum values %counts;
+say $js->encode( { seq_id => 'genome', '_' => $total, %counts } );
 
 sub task {
-  my ($id, $seq) = @{$_[0]};
+  my ( $id, $seq ) = @{ $_[0] };
   my $counter = ccount_iter();
-  return [$id, ccount_iter()->($seq) ];
+  return [ $id, ccount_iter()->($seq) ];
 }
 

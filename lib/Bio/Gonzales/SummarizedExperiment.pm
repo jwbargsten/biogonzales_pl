@@ -429,6 +429,7 @@ sub clone {
     row_data       => Clone::clone( $self->row_data ),
     row_data_names => Clone::clone( $self->row_data_names ),
     col_data_names => Clone::clone( $self->col_data_names ),
+    meta_data      => Clone::clone( $self->meta_data ),
   );
 }
 
@@ -554,10 +555,10 @@ sub aggregate_by_idcs {
   for my $v ( values %$row_groups ) {
     local $_ = $v;
     my ( $row, $row_name, $row_data, $row_data_name )
-      = $cb->( $v->{key}, $v->{rows}, $v->{idcs});
-    push @agg_assay,          $row if(defined($row));
-    push @agg_row_names,      $row_name if ( defined($row_name) );
-    push @agg_row_data,       $row_data if ( defined($row_data) );
+      = $cb->( $v->{key}, $v->{rows}, $v->{idcs} );
+    push @agg_assay,          $row           if ( defined($row) );
+    push @agg_row_names,      $row_name      if ( defined($row_name) );
+    push @agg_row_data,       $row_data      if ( defined($row_data) );
     push @agg_row_data_names, $row_data_name if ( defined($row_data_name) );
   }
 
