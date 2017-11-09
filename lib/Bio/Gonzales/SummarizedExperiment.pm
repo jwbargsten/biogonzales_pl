@@ -686,6 +686,20 @@ sub row_apply {
   return \@res;
 }
 
+sub element_apply {
+  my ( $self, $cb ) = @_;
+
+  my @res;
+  my $assay = $self->assay;
+  for ( my $i = 0; $i < @$assay; $i++ ) {
+    my $j = 0;
+    my @row_res = map { $cb->($_, $i, $j++) } @{$assay->[$i] // []};
+
+    push @res, \@row_res;
+  }
+  return \@res;
+}
+
 sub col_apply {
   my ( $self, $cb ) = @_;
 
@@ -707,7 +721,7 @@ sub apply {
   } elsif ( $dir eq 'c' || $dir == 2 ) {
     return $self->col_apply( $cb, @args );
   } elsif ( $dir eq 'rc' || $dir eq 'cr' || $dir == 3 ) {
-    # cell apply
+    return $self->element_apply($cb, @args);
   }
 }
 

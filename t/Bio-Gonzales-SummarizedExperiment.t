@@ -158,4 +158,12 @@ is_deeply(
   ]
 );
 
+my $se_elem_apply = $se_base->clone;
+
+my $i = 0;
+my $res = $se_elem_apply->element_apply( sub { s/[a-z]/u/g; return $i++ } );
+
+is_deeply( $se_elem_apply->assay, [ [ 'u', 'u', 'u' ], [ 1, 2, 3 ], [ 'u', 'u', 'u' ] ] );
+is_deeply( $res,                  [ [ 0,   1,   2 ],   [ 3, 4, 5 ], [ 6,   7,   8 ] ] );
+
 done_testing();
