@@ -14,7 +14,8 @@ our ( @EXPORT, @EXPORT_OK, %EXPORT_TAGS );
 
 @EXPORT      = qw();
 %EXPORT_TAGS = ();
-@EXPORT_OK   = qw(undef_slice slice invslice flatten hash_merge as_arrayref sys_pipe sys_fmt sys_pipe_fatal);
+@EXPORT_OK
+  = qw(undef_slice slice invslice flatten hash_merge as_arrayref sys_pipe sys_fmt sys_pipe_fatal deep_value);
 
 sub slice {
   my ( $hr, @k ) = @_;
@@ -125,10 +126,33 @@ sub sys_pipe {
 }
 
 sub sys_pipe_fatal {
-  my $cmd  = 'set pipefail; ' . sys_fmt(@_);
+  my $cmd = 'set pipefail; ' . sys_fmt(@_);
   system($cmd) == 0 or confess "system " . join( " ", @_ ) . " FAILED: $? ## $!";
 }
 
+sub deep_value {
+  my ( $data, $keys ) = ( shift, shift );
+
+  $keys = [$keys] if ( defined($keys) && !ref $keys );
+
+  for my $k (@$keys) {
+    my $type = ref $data;
+    if ( !$type ) {
+      die "key >$k< cannot be resolved (beyond max level)";
+    } elsif ( $type eq 'ARRAY' ) {
+      die "key >$k< cannot be resolved (non-existent)" unless ( exists( $data->[$k] ) );
+      $data = $data->[$k];
+    } elsif ( $type eq 'HASH' ) {
+      die "key >$k< cannot be resolved (non-existent)" unless ( exists( $data->{$k} ) );
+      $data = $data->{$k};
+    } elsif ( $type eq 'CODE' ) {
+      $data = $data->($k);
+    } else {
+      confess "type $type not supported";
+    }
+  }
+  return $data;
+}
 1;
 
 __END__
