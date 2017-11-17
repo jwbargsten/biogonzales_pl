@@ -3,7 +3,13 @@ package Bio::Gonzales::Util::Cerial;
 use warnings;
 use strict;
 use Carp;
+
+use v5.11;
+
+use Exporter 'import';
+
 use Bio::Gonzales::Util::File qw/open_on_demand/;
+use Bio::Gonzales::Util qw/deep_value flatten/;
 
 use Try::Tiny;
 use YAML::XS;
@@ -11,17 +17,27 @@ use JSON::XS;
 use Data::Dumper;
 use Storable qw/nstore_fd fd_retrieve/;
 
-use 5.010;
-
-use base 'Exporter';
-our ( @EXPORT, @EXPORT_OK, %EXPORT_TAGS );
 # VERSION
 
-@EXPORT = qw(
-  ythaw yfreeze yslurp yspew
-  jthaw jfreeze jslurp jspew
-  stoslurp stospew
+our %EXPORT_TAGS = (
+  'all' => [
+    qw(
+      ndjson_iterate ndjson_hash ndjson_slurp ndjson_spew
+      ythaw yfreeze yslurp yspew
+      jthaw jfreeze jslurp jspew
+      stoslurp stospew
+      )
+  ],
+  std => [
+    qw(
+      ythaw yfreeze yslurp yspew
+      jthaw jfreeze jslurp jspew
+      stoslurp stospew
+      )
+  ]
 );
+our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
+our @EXPORT    = ( @{ $EXPORT_TAGS{'std'} } );
 
 BEGIN {
   *yfreeze = \&YAML::XS::Dump;
@@ -88,6 +104,92 @@ sub stoslurp {
   my $data = fd_retrieve($fh);
   $fh->close unless $was_open;
   return $data;
+}
+
+sub ndjson_hash {
+  my $keys  = shift;
+  my $files = shift;
+  my $cfg   = shift;
+
+  my %res;
+  my $it = ndjson_iterate($files);
+  while ( my $elem = $it->() ) {
+    my $val = deep_value( $elem, $keys );
+    if ( $cfg->{uniq} ) {
+      die $val . " already exists" if ( $res{$val} );
+      $res{$val} = $elem;
+    } else {
+      $res{$val} //= [];
+      push @{ $res{$val} }, $elem;
+    }
+  }
+  return \%res;
+}
+
+sub ndjson_slurp {
+  my $it = ndjson_iterate(@_);
+
+  my @res;
+  while ( defined( my $elem = $it->() ) ) {
+    push @res, $elem;
+  }
+  return \@res;
+}
+
+sub ndjson_spew {
+  my ( $dest, $elems, $c ) = @_;
+
+  my $js = JSON::XS->new->utf8->allow_nonref;
+  $js = $js->canonical(1) if ( $c->{canonical} );
+  my ( $fh, $fh_was_open ) = open_on_demand( $dest, '>' );
+
+  try {
+    for my $elem (@$elems) {
+      say $fh $js->encode($elem);
+    }
+  }
+  catch {
+    confess "could not spew: $_";
+  };
+
+  $fh->close unless ($fh_was_open);
+  return;
+}
+
+sub ndjson_iterate {
+  my @srcs = flatten(@_);
+
+  my $i = 0;
+  my ( $fh, $fh_was_open ) = open_on_demand( $srcs[$i], '<' );
+
+  return sub {
+    while ( $i < @srcs ) {
+      while ( my $record = <$fh> ) {
+        next if ( !$record || $record =~ /^\s*$/ );
+        my $data;
+        try {
+          $data = decode_json($record);
+        }
+        catch {
+          warn "caught error: $_ JSON string >$record<";
+        };
+        confess "no valid data in record" unless ($data);
+
+        return $data;
+      }
+
+      $fh->close unless ($fh_was_open);
+      if ( ++$i >= @srcs ) {
+        # return if next file does not exist
+        return;
+      }
+
+      # open next file
+      ( $fh, $fh_was_open ) = open_on_demand( $srcs[$i], '<' );
+    }
+    return;
+  };
+
 }
 
 __END__
