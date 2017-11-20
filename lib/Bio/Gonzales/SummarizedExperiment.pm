@@ -727,7 +727,6 @@ sub apply {
 
 sub slice_by_idcs {
   my ( $self, $idcs ) = @_;
-  #FIXME implement cloning
 
   my @assay_new = map { [ @{$_}[@$idcs] ] } @{ $self->assay };
   my @new_colnames;
@@ -936,9 +935,23 @@ sensitve and returns a hash in list context and a hash reference in scalar conte
 =head2 row_idx_map
 =head2 row_idx_match
 =head2 shuffle
+
 =head2 slice_by_idcs
+
+    $se->slice_by_idcs(\@idcs);
+    $se->slice_by_idcs([0,5,13]);
+
+Extract a column-"slice" from the summarized experiment. The indices select the columns.
+
 =head2 slice_by_names
+
 =head2 slurp_assay
+    
+    my $se = Bio::Gonzales::SummarizedExperiment->slurp_assay($source, \%params);
+    my $se = Bio::Gonzales::SummarizedExperiment->slurp_assay("data.csv", { header => 1, sep => ';' });
+
+Create a new summarized experiment from matrix/tabular data.
+
 =head2 sort
 =head2 spew_assay
 =head2 subset
