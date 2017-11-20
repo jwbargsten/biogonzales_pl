@@ -1,6 +1,6 @@
 package Bio::Gonzales::Seq;
 
-use v5.11;
+use v5.10;
 
 use Mouse;
 
