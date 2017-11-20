@@ -122,12 +122,12 @@ sub sys_fmt {
 
 sub sys_pipe {
   my $cmd = sys_fmt(@_);
-  system($cmd) == 0 or confess "system failed: $?\n$cmd";
+  system($cmd) == 0 or croak "system failed: $?\n$cmd";
 }
 
 sub sys_pipe_fatal {
   my $cmd = 'set pipefail; ' . sys_fmt(@_);
-  system($cmd) == 0 or confess "system " . join( " ", @_ ) . " FAILED: $? ## $!";
+  system($cmd) == 0 or croak "system " . join( " ", @_ ) . " FAILED: $? ## $!";
 }
 
 sub deep_value {
@@ -148,7 +148,7 @@ sub deep_value {
     } elsif ( $type eq 'CODE' ) {
       $data = $data->($k);
     } else {
-      confess "type $type not supported";
+      croak "type $type not supported";
     }
   }
   return $data;
