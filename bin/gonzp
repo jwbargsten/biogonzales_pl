@@ -14,6 +14,7 @@ use File::Spec::Functions qw/catfile/;
 use Bio::Gonzales::Util::File qw/slurpc/;
 use Cwd qw/fastcwd/;
 use File::Touch;
+use IO::Prompt::Tiny qw/prompt/;
 use Getopt::Long::Descriptive;
 use Bio::Gonzales::Util::Development::File;
 
@@ -95,7 +96,10 @@ if ( $cmd =~ /^i(nit)?/ ) {
     $dir = catfile( File::Spec->rel2abs('.'), $rel_dir );
   }
   say STDERR "Creating $dir";
-  confess "name already exists" if ( -e $dir );
+  if ( -e $dir ) {
+    my $answer = prompt( "analysis dir $dir already exists, overwrite? (y/n)", "n" );
+    exit if ( $answer !~ /^y/i );
+  }
   make_path($dir);
 
   say STDERR "Creating $dir/bin";

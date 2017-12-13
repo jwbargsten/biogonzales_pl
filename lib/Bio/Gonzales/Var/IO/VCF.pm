@@ -17,7 +17,7 @@ has meta       => ( is => 'rw', default => sub { {} } );
 has samples => ( is => 'rw', default => sub { [] } );
 has _wrote_sth_before => ( is => 'rw' );
 
-sub sample_ids { shift->samples }
+sub sample_ids { shift->samples(@_) }
 
 sub sample_idx2id {
   my $ids = shift->samples;
