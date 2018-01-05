@@ -31,6 +31,8 @@ our $NA_VALUE = 'NA';
 has [qw/assay col_data row_data row_names col_names row_data_names col_data_names meta_data/] =>
   ( is => 'rw', default => sub { [] } );
 
+has na_value => ( is => 'rw', default => $NA_VALUE );
+
 sub data { shift->assay(@_) }
 
 sub header { shift->col_names(@_) }
@@ -49,9 +51,10 @@ sub spew_assay {
   my $src   = shift;
   my $param = shift // {};
   my %c     = %$param;
-  $c{header} = $self->col_names if ( $param->{header} || $param->{col_names} );
+  $c{header}    = $self->col_names if ( $param->{header} || $param->{col_names} );
   $c{row_names} = $self->row_names if ( $param->{row_names} );
-  $c{col_data} = $self->col_data if ( $param->{col_data} );
+  $c{col_data}  = $self->col_data  if ( $param->{col_data} );
+  $c{na_value} = $self->na_value;
   mspew( $src, $self->assay, \%c );
   return $self;
 }
@@ -174,6 +177,7 @@ sub add_col {
 
 sub cbind {
   my ( $self, $data, $names, $col_data_n ) = @_;
+  my $na_value = $self->na_value;
 
   $col_data_n //= [];
   push @{ $self->col_names }, @$names if ( $names && @$names );
@@ -202,8 +206,8 @@ sub cbind {
 
   my $col_data_ncol = @$col_data > @$col_data_n ? @$col_data : @$col_data_n;
   for ( my $i = 0; $i < $col_data_ncol; $i++ ) {
-    $col_data->[$i] //= [ ($NA_VALUE) x $ncol ];
-    push @{ $col_data->[$i] }, @{ $col_data_n->[$i] // [ ($NA_VALUE) x $ncol_added ] };
+    $col_data->[$i] //= [ ($na_value) x $ncol ];
+    push @{ $col_data->[$i] }, @{ $col_data_n->[$i] // [ ($na_value) x $ncol_added ] };
   }
 
   return $self;
@@ -302,6 +306,8 @@ sub _invert_idcs {
 sub merge {
   my ( $se_x, $se_y, $param ) = @_;
 
+  my $na_value = $se_x->na_value;
+
   my %param = ( join => 'inner', %{ $param // {} } );
   my $by_x = $param{by_x} // $param{by};
   my $by_y = $param{by_y} // $param{by};
@@ -340,7 +346,7 @@ sub merge {
       next if ( $param{join} eq 'left' && !$data_x );
       $data_y //= {
         idcs      => [-1],
-        rows      => [ [ ($NA_VALUE) x $se_y->ncol ] ],
+        rows      => [ [ ($na_value) x $se_y->ncol ] ],
         key       => $data_x->{key},
         key_names => $data_x->{key_names},
         row_names => [],
@@ -349,7 +355,7 @@ sub merge {
     }
     if ( $param{join} eq 'right' || $param{join} eq 'full' ) {
       next if ( $param{join} eq 'right' && !$data_y );
-      my @row = ( ($NA_VALUE) x $se_x->ncol );
+      my @row = ( ($na_value) x $se_x->ncol );
       @row[@$idcs_x] = @{ $data_y->{key} };
       $data_x //= {
         idcs      => [-1],
@@ -378,10 +384,10 @@ sub merge {
   my @col_data;
 
   if ( @$col_data_x || @$col_data_y ) {
-  my $col_data_nrow = max((scalar @$col_data_x), (scalar @$col_data_y));
+    my $col_data_nrow = max( ( scalar @$col_data_x ), ( scalar @$col_data_y ) );
     for ( my $i = 0; $i < $col_data_nrow; $i++ ) {
-      my $cd_x = $col_data_x->[$i] // [ ($NA_VALUE) x $ncol_only_x ];
-      my $cd_y = $col_data_y->[$i] // [ ($NA_VALUE) x $ncol_only_y ];
+      my $cd_x = $col_data_x->[$i] // [ ($na_value) x $ncol_only_x ];
+      my $cd_y = $col_data_y->[$i] // [ ($na_value) x $ncol_only_y ];
       push @col_data, [ @$cd_x, @{$cd_y}[@$inv_by_y] ];
     }
   }
@@ -507,8 +513,9 @@ sub _max_dim {
 }
 
 sub _na_fill_2d {
-  my $data = shift;
-  my $dim = shift // [ 0, 0 ];
+  my $data     = shift;
+  my $dim      = shift // [ 0, 0 ];
+  my $na_value = shift // $NA_VALUE;
 
   return unless ( $data && ref $data eq 'ARRAY' );
   my $dim_data = _max_dim($data);
@@ -520,22 +527,23 @@ sub _na_fill_2d {
     $data->[$i] //= [];
     next if ( @{ $data->[$i] } == $ncol );
     for ( my $j = 0; $j < $ncol; $j++ ) {
-      $data->[$i][$j] //= $NA_VALUE;
+      $data->[$i][$j] //= $na_value;
     }
   }
   return $data;
 }
 
 sub _na_fill_1d {
-  my $data = shift;
-  my $dim  = shift;
+  my $data     = shift;
+  my $dim      = shift;
+  my $na_value = shift // $NA_VALUE;
 
   return unless ( $data && ref $data eq 'ARRAY' );
   my $len = max( $dim, @$data );
   return unless ($len);
 
   for ( my $i = 0; $i < $len; $i++ ) {
-    $data->[$i] //= $NA_VALUE;
+    $data->[$i] //= $na_value;
   }
   return $data;
 }
@@ -696,7 +704,7 @@ sub element_apply {
   my $assay = $self->assay;
   for ( my $i = 0; $i < @$assay; $i++ ) {
     my $j = 0;
-    my @row_res = map { $cb->($_, $i, $j++) } @{$assay->[$i] // []};
+    my @row_res = map { $cb->( $_, $i, $j++ ) } @{ $assay->[$i] // [] };
 
     push @res, \@row_res;
   }
@@ -724,7 +732,7 @@ sub apply {
   } elsif ( $dir eq 'c' || $dir == 2 ) {
     return $self->col_apply( $cb, @args );
   } elsif ( $dir eq 'rc' || $dir eq 'cr' || $dir == 3 ) {
-    return $self->element_apply($cb, @args);
+    return $self->element_apply( $cb, @args );
   }
 }
 
