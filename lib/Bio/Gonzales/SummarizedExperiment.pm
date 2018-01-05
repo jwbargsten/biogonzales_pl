@@ -51,6 +51,7 @@ sub spew_assay {
   my %c     = %$param;
   $c{header} = $self->col_names if ( $param->{header} || $param->{col_names} );
   $c{row_names} = $self->row_names if ( $param->{row_names} );
+  $c{col_data} = $self->col_data if ( $param->{col_data} );
   mspew( $src, $self->assay, \%c );
   return $self;
 }
@@ -377,7 +378,8 @@ sub merge {
   my @col_data;
 
   if ( @$col_data_x || @$col_data_y ) {
-    for ( my $i = 0; $i < $ncol_total; $i++ ) {
+  my $col_data_nrow = max((scalar @$col_data_x), (scalar @$col_data_y));
+    for ( my $i = 0; $i < $col_data_nrow; $i++ ) {
       my $cd_x = $col_data_x->[$i] // [ ($NA_VALUE) x $ncol_only_x ];
       my $cd_y = $col_data_y->[$i] // [ ($NA_VALUE) x $ncol_only_y ];
       push @col_data, [ @$cd_x, @{$cd_y}[@$inv_by_y] ];
@@ -400,6 +402,7 @@ sub merge {
 sub inconsistencies {
   my $self = shift;
 
+  # TODO
   # check if assay is rectangular
   # check if row data is rectangular and has the
 
@@ -785,7 +788,9 @@ sub slice_by_names {
 }
 
 sub each {
-  shift->apply( 1, @_ );
+  my $self = shift;
+  $self->apply( 1, @_ );
+  return $self;
 }
 
 sub uniq {
@@ -926,6 +931,28 @@ sensitve and returns a hash in list context and a hash reference in scalar conte
 =head2 json_spew
 =head2 make_consistent
 =head2 merge
+
+Merge two SummarizedExperiment objects.
+
+    use Bio::Gonzales::SummarizedExperiment;
+    my $se_x = Bio::Gonzales::SummarizedExperiment->new(
+      assay => [ [ 1, "homer", "simpson" ], [ 2, "bart", "simpson" ], [ 3, "lisa simpson" ] ],
+      col_names => [qw(user_id first_name surname)]
+    );
+    
+    my $se_y = Bio::Gonzales::SummarizedExperiment->new(
+      assay => [ [ 1, 120 ], [ 2, 20 ] ],
+      col_names => [qw(user_id weight_kg)]
+    );
+    
+    # inner join by default
+    my $merged_se = $se_x->merge($se_y, { by => [ 'user_id' ] });
+    
+    # user_id first_name surname weight_kg
+    # 1       homer      simpson 120
+    # 2       bart       simpson 20
+    # Lisa is missing, because the $se_y lacks weight information.
+
 =head2 names_to_idcs
 =head2 ncol
 =head2 nrow

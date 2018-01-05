@@ -28,7 +28,7 @@ sub dict_slurp {
   my ( $src, $cc ) = @_;
 
   croak "no config settings given"
-  unless($cc && ref $cc eq 'HASH');
+    unless ( $cc && ref $cc eq 'HASH' );
 
   $cc->{key_idx} //= $cc->{key_idcs};
   $cc->{val_idx} //= $cc->{val_idcs};
@@ -202,7 +202,7 @@ sub mslurp {
     my @row = split /$c{sep}/, $_, -1;
 
     push @row_names, shift @row if ( $c{row_names} );
-    @row = map { $_ eq $c{na_value} ? undef : $_ } @row if($c{na_value});
+    @row = map { $_ eq $c{na_value} ? undef : $_ } @row if ( $c{na_value} );
 
     push @m, ( @col_idx ? [ @row[@col_idx] ] : \@row );
   }
@@ -344,10 +344,11 @@ sub mspew {
   my ( $dest, $m, $c ) = @_;
 
   confess "no matrix, you need to supply a matrix of the form [ [ 1,2,3 ], [ 4,5,6 ], ... ]"
-    unless ($m && ref $m eq 'ARRAY');
+    unless ( $m && ref $m eq 'ARRAY' );
 
   my $header    = $c->{header}    // $c->{ids};
   my $rownames  = $c->{row_names} // $c->{rownames};
+  my $col_data  = $c->{col_data};
   my $square    = $c->{square};
   my $fill_rows = $c->{fill_rows} // 1;
   my $sep       = $c->{sep}       // "\t";
@@ -386,6 +387,14 @@ sub mspew {
     my @qhead = @{ _quote( $header, $quote_is_on, $na_value ) };
     unshift @qhead, '' if ( $rownames && !$c->{r_style_header} );
     say $fh join $sep, @qhead;
+  }
+
+  if ($col_data) {
+    for my $row (@$col_data) {
+      my @qcd = @{ _quote( $row, $quote_is_on, $na_value ) };
+      unshift @qcd, '' if ( $rownames && !$c->{r_style_header} );
+      say $fh join $sep, @qcd;
+    }
   }
 
   #iterate through rows

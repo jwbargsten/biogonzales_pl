@@ -140,6 +140,23 @@ is_deeply(
 
 is_deeply( $se_slice->col_names, [qw/cn1 cn3/] );
 
+{
+  my $se_x = Bio::Gonzales::SummarizedExperiment->new(
+    assay => [ [ 1, "homer", "simpson" ], [ 2, "bart", "simpson" ], [ 3, "lisa simpson" ] ],
+    col_names => [qw(user_id first_name surname)],
+    col_data  => [ [ 'User ID', 'First Name', 'Surname' ] ],
+  );
+
+  my $se_y = Bio::Gonzales::SummarizedExperiment->new(
+    assay => [ [ 1, 120 ], [ 2, 20 ] ],
+    col_names => [qw(user_id weight_kg)]
+  );
+
+  # inner join by default
+  my $merged_se = $se_x->merge( $se_y, { by => ['user_id'] } );
+  is_deeply( $merged_se->col_data, [ [ 'User ID', 'First Name', 'Surname', undef ] ] );
+}
+
 my @data;
 @data = ( [qw/1 2 3/], [qw/2/], [qw/3 2/] );
 Bio::Gonzales::SummarizedExperiment::_na_fill_2d( \@data );
