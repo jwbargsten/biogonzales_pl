@@ -31,7 +31,7 @@ our $NA_VALUE = 'NA';
 has [qw/assay col_data row_data row_names col_names row_data_names col_data_names meta_data/] =>
   ( is => 'rw', default => sub { [] } );
 
-has na_value => ( is => 'rw', default => $NA_VALUE );
+has na_value => ( is => 'rw', default => sub { $NA_VALUE } );
 
 sub data { shift->assay(@_) }
 
@@ -54,7 +54,7 @@ sub spew_assay {
   $c{header}    = $self->col_names if ( $param->{header} || $param->{col_names} );
   $c{row_names} = $self->row_names if ( $param->{row_names} );
   $c{col_data}  = $self->col_data  if ( $param->{col_data} );
-  $c{na_value} = $self->na_value;
+  $c{na_value}  = $self->na_value;
   mspew( $src, $self->assay, \%c );
   return $self;
 }
@@ -127,6 +127,7 @@ sub transpose {
 
   return __PACKAGE__->new(
     assay          => \@assay_t,
+    na_value       => $self->na_value,
     row_names      => Clone::clone( $self->col_names ),
     row_data       => \@row_data_t,
     col_names      => Clone::clone( $self->row_names ),
@@ -282,6 +283,7 @@ sub subset {
 
   return __PACKAGE__->new(
     assay          => \@assay_new,
+    na_value       => $self->na_value,
     row_names      => \@row_names_new,
     row_data       => \@row_data_new,
     row_data_names => Clone::clone( $self->row_data_names ),
@@ -394,6 +396,7 @@ sub merge {
   return __PACKAGE__->new(
     assay => \@assay_new,
 
+    na_value => $se_x->na_value,
     row_data => \@row_data_new,
     col_data => \@col_data,
 
@@ -432,6 +435,7 @@ sub clone {
   my $self = shift;
   return __PACKAGE__->new(
     assay          => Clone::clone( $self->assay ),
+    na_value       => $self->na_value,
     col_data       => Clone::clone( $self->col_data ),
     col_names      => Clone::clone( $self->col_names ),
     row_names      => Clone::clone( $self->row_names ),
@@ -575,6 +579,7 @@ sub aggregate_by_idcs {
 
   return __PACKAGE__->new(
     assay          => \@agg_assay,
+    na_value       => $self->na_value,
     col_names      => $col_names // [],
     row_names      => \@agg_row_names,
     row_data_names => \@agg_row_data_names,
@@ -748,6 +753,7 @@ sub slice_by_idcs {
 
   return __PACKAGE__->new(
     assay          => \@assay_new,
+    na_value       => $self->na_value,
     row_names      => Clone::clone( $self->row_names ),
     row_data       => Clone::clone( $self->row_data ),
     col_names      => \@new_colnames,
