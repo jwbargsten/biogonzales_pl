@@ -207,8 +207,8 @@ sub cbind {
 
   my $col_data_ncol = @$col_data > @$col_data_n ? @$col_data : @$col_data_n;
   for ( my $i = 0; $i < $col_data_ncol; $i++ ) {
-    $col_data->[$i] //= [ ($na_value) x $ncol ];
-    push @{ $col_data->[$i] }, @{ $col_data_n->[$i] // [ ($na_value) x $ncol_added ] };
+    $col_data->[$i] //= [ (undef) x $ncol ];
+    push @{ $col_data->[$i] }, @{ $col_data_n->[$i] // [ (undef) x $ncol_added ] };
   }
 
   return $self;
@@ -308,8 +308,6 @@ sub _invert_idcs {
 sub merge {
   my ( $se_x, $se_y, $param ) = @_;
 
-  my $na_value = $se_x->na_value;
-
   my %param = ( join => 'inner', %{ $param // {} } );
   my $by_x = $param{by_x} // $param{by};
   my $by_y = $param{by_y} // $param{by};
@@ -348,7 +346,7 @@ sub merge {
       next if ( $param{join} eq 'left' && !$data_x );
       $data_y //= {
         idcs      => [-1],
-        rows      => [ [ ($na_value) x $se_y->ncol ] ],
+        rows      => [ [ (undef) x $se_y->ncol ] ],
         key       => $data_x->{key},
         key_names => $data_x->{key_names},
         row_names => [],
@@ -357,7 +355,7 @@ sub merge {
     }
     if ( $param{join} eq 'right' || $param{join} eq 'full' ) {
       next if ( $param{join} eq 'right' && !$data_y );
-      my @row = ( ($na_value) x $se_x->ncol );
+      my @row = ( (undef) x $se_x->ncol );
       @row[@$idcs_x] = @{ $data_y->{key} };
       $data_x //= {
         idcs      => [-1],
@@ -388,8 +386,8 @@ sub merge {
   if ( @$col_data_x || @$col_data_y ) {
     my $col_data_nrow = max( ( scalar @$col_data_x ), ( scalar @$col_data_y ) );
     for ( my $i = 0; $i < $col_data_nrow; $i++ ) {
-      my $cd_x = $col_data_x->[$i] // [ ($na_value) x $ncol_only_x ];
-      my $cd_y = $col_data_y->[$i] // [ ($na_value) x $ncol_only_y ];
+      my $cd_x = $col_data_x->[$i] // [ (undef) x $ncol_only_x ];
+      my $cd_y = $col_data_y->[$i] // [ (undef) x $ncol_only_y ];
       push @col_data, [ @$cd_x, @{$cd_y}[@$inv_by_y] ];
     }
   }
@@ -519,7 +517,7 @@ sub _max_dim {
 sub _na_fill_2d {
   my $data     = shift;
   my $dim      = shift // [ 0, 0 ];
-  my $na_value = shift // $NA_VALUE;
+  my $na_value = shift;
 
   return unless ( $data && ref $data eq 'ARRAY' );
   my $dim_data = _max_dim($data);
@@ -810,6 +808,7 @@ sub each {
 sub uniq {
   my $self = shift;
 
+      no warnings 'uninitialized';
   my %seen;
   return $self->subset(
     sub {
@@ -863,6 +862,12 @@ Return the assay of the summarized experiment.
 =head2 col_data_names
 
 =head2 meta_data
+
+=head2 na_value
+
+Set the NA value if the object is stored. Internally, while I<in memory>, undef will be
+used. So this value will only have an effect if data is read or written somewhere.
+Default is C<Bio::Gonzales::SummarizedExperiment::NA_VALUE>.
 
 =head1 METHODS
 

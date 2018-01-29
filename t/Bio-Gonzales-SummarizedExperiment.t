@@ -54,8 +54,8 @@ $se->add_col( [qw/u v w/], 'cn4' );
 is_deeply( $se->col_names, [qw/cn1 cn2 cn3 cn4/] );
 is_deeply( $se->assay, [ [qw/a b c u/], [ 1, 2, 3, 'v' ], [qw/d e f w/], ] );
 is( $se->col_idx('cn4'),   3 );
-is( $se->col_data->[0][3], 'NA' );
-is( $se->col_data->[1][3], 'NA' );
+is( $se->col_data->[0][3], undef );
+is( $se->col_data->[1][3], undef );
 
 # MERGE
 my $se1 = Bio::Gonzales::SummarizedExperiment->new(
@@ -115,17 +115,17 @@ is_deeply( $sem->assay, [ [qw/a b c b c/], [qw/d e f e f/] ] );
 
 $sem = $se1->merge( $se2, { join => 'left', by_x => [qw/cn1/], by_y => [qw/ckn1/] } )
   ->sort( sub { $_[0][0] cmp $_[1][0] } );
-is_deeply( $sem->assay, [ [qw/1 2 3 NA NA/], [qw/a b c b c/], [qw/d e f e f/] ] );
+is_deeply( $sem->assay, [ [ qw/1 2 3/, undef, undef ], [qw/a b c b c/], [qw/d e f e f/] ] );
 
 $sem = $se1->merge( $se2, { join => 'right', by_x => [qw/cn1/], by_y => [qw/ckn1/] } )
   ->sort( sub { $_[0][0] cmp $_[1][0] } );
-is_deeply( $sem->assay, [ [qw/2 NA NA 2 3/], [qw/a b c b c/], [qw/d e f e f/] ] );
+is_deeply( $sem->assay, [ [ 2, undef, undef, qw/2 3/ ], [qw/a b c b c/], [qw/d e f e f/] ] );
 
 dies_ok { $se1->merge( $se2, { join => 'left', by_x => [qw/cn1 cn2/], by_y => [qw/ckn1/] } ) };
 
 $sem = $se1->merge( $se2, { join => 'left', by_x => [qw/cn1 cn3/], by_y => [qw/ckn1 ckn3/] } )
   ->sort( sub { $_[0][0] cmp $_[1][0] } );
-is_deeply( $sem->assay, [ [qw/1 2 3 NA/], [qw/a b c b/], [qw/d e f e/] ] );
+is_deeply( $sem->assay, [ [ qw/1 2 3/, undef ], [qw/a b c b/], [qw/d e f e/] ] );
 is_deeply( $sem->col_names, [qw/cn1 cn2 cn3 ckn2/] );
 
 my $se_slice = $se_base->slice_by_names( [qw/cn1 cn3/] );
@@ -160,12 +160,24 @@ is_deeply( $se_slice->col_names, [qw/cn1 cn3/] );
 my @data;
 @data = ( [qw/1 2 3/], [qw/2/], [qw/3 2/] );
 Bio::Gonzales::SummarizedExperiment::_na_fill_2d( \@data );
-is_deeply( \@data, [ [qw/1 2 3/], [qw/2 NA NA /], [qw/3 2 NA/] ] );
+is_deeply( \@data, [ [qw/1 2 3/], [ qw/2/, undef, undef ], [ qw/3 2/, undef ] ] );
 
 @data = ( [qw/1 2 3/], [qw/2/], [qw/3 2/] );
-Bio::Gonzales::SummarizedExperiment::_na_fill_2d( \@data, [ 5, 6 ] );
-is_deeply( \@data,
-  [ [qw/1 2 3 NA NA NA/], [qw/2 NA NA NA NA NA/], [qw/3 2 NA NA NA NA/], [ ('NA') x 6 ], [ ('NA') x 6 ] ] );
+Bio::Gonzales::SummarizedExperiment::_na_fill_2d( \@data, [ 0, 0 ], 'NA' );
+is_deeply( \@data, [ [qw/1 2 3/], [qw/2 NA NA/], [qw/3 2 NA/] ] );
+
+@data = ( [qw/1 2 3/], [qw/2/], [qw/3 2/] );
+Bio::Gonzales::SummarizedExperiment::_na_fill_2d( \@data, [ 5, 6 ], 'NA' );
+is_deeply(
+  \@data,
+  [
+    [ qw/1 2 3/, ('NA') x 3 ],
+    [ qw/2/,     ('NA') x 5 ],
+    [ qw/3 2/,   ('NA') x 4 ],
+    [ ('NA') x 6 ],
+    [ ('NA') x 6 ]
+  ]
+);
 
 is_deeply(
   $se_slice->col_data,
