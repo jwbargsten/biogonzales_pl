@@ -19,7 +19,7 @@ my $LEVEL = { debug => 1, info => 2, warn => 3, error => 4, fatal => 5 };
 my $is_thread = eval '$threads::threads';
 
 has path       => ( is => 'rw' );
-has level      => ( is => 'rw', default => sub {'debug'} );
+has level      => ( is => 'rw', default => sub { 'info' } );
 has namespace  => ( is => 'rw' );
 has _fh        => ( is => 'lazy' );
 has tee_stderr => ( is => 'rw' );
@@ -82,7 +82,7 @@ sub is_warn  { shift->is_level('warn') }
 sub is_level {
   my ( $self, $level ) = @_;
   croak "level not specified" unless ($level);
-  return $LEVEL->{ lc $level } >= $LEVEL->{ $ENV{GONZALES_LOG_LEVEL} || $self->level };
+  return $LEVEL->{ lc $level } >= $LEVEL->{ lc($ENV{GONZ_LOG_LEVEL}) || $self->level };
 }
 
 sub log {
