@@ -159,15 +159,15 @@ is_deeply( $se_slice->col_names, [qw/cn1 cn3/] );
 
 my @data;
 @data = ( [qw/1 2 3/], [qw/2/], [qw/3 2/] );
-Bio::Gonzales::SummarizedExperiment::_na_fill_2d( \@data );
+Bio::Gonzales::SummarizedExperiment::_Fill_2d( \@data );
 is_deeply( \@data, [ [qw/1 2 3/], [ qw/2/, undef, undef ], [ qw/3 2/, undef ] ] );
 
 @data = ( [qw/1 2 3/], [qw/2/], [qw/3 2/] );
-Bio::Gonzales::SummarizedExperiment::_na_fill_2d( \@data, [ 0, 0 ], 'NA' );
+Bio::Gonzales::SummarizedExperiment::_Fill_2d( \@data, [ 0, 0 ], 'NA' );
 is_deeply( \@data, [ [qw/1 2 3/], [qw/2 NA NA/], [qw/3 2 NA/] ] );
 
 @data = ( [qw/1 2 3/], [qw/2/], [qw/3 2/] );
-Bio::Gonzales::SummarizedExperiment::_na_fill_2d( \@data, [ 5, 6 ], 'NA' );
+Bio::Gonzales::SummarizedExperiment::_Fill_2d( \@data, [ 5, 6 ], 'NA' );
 is_deeply(
   \@data,
   [

@@ -6,7 +6,7 @@ use Encode qw(decode_utf8);
 
 BEGIN { use_ok("Bio::Gonzales::Util::Log"); }
 
-my $l = Bio::Gonzales::Util::Log->new();
+my $l = Bio::Gonzales::Util::Log->new(level => 'debug');
 
 
 my $stderr = capture_stderr {
