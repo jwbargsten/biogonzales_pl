@@ -82,7 +82,7 @@ sub is_warn  { shift->is_level('warn') }
 sub is_level {
   my ( $self, $level ) = @_;
   croak "level not specified" unless ($level);
-  return $LEVEL->{ lc $level } >= $LEVEL->{ lc($ENV{GONZ_LOG_LEVEL}) || $self->level };
+  return $LEVEL->{ lc $level } >= $LEVEL->{ lc($ENV{GONZ_LOG_LEVEL} || $self->level) };
 }
 
 sub log {

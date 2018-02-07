@@ -514,7 +514,14 @@ sub _max_dim {
   return [ scalar(@$aoa), $max_ncol ];
 }
 
-sub _na_fill_2d {
+sub fill_assay {
+  my $self = shift;
+
+  _Fill_2d($self->assay);
+  return $self;
+}
+
+sub _Fill_2d {
   my $data     = shift;
   my $dim      = shift // [ 0, 0 ];
   my $na_value = shift;
@@ -977,6 +984,33 @@ Merge two SummarizedExperiment objects.
 =head2 nrow
 =head2 rbind
 =head2 row_apply
+
+Apply a callback to each row. C<$se->row_apply(@args)> is equivalent to C<$se->apply(1, @args)>
+
+
+    use Bio::Gonzales::SummarizedExperiment;
+    my $se = Bio::Gonzales::SummarizedExperiment->new(
+      assay => [ [ 1, "homer", "simpson" ], [ 2, "bart", "simpson" ], [ 3, "lisa", "simpson" ] ],
+      col_names => [qw(user_id first_name surname)]
+    );
+
+    # WITHOUT MODIFYING THE SUMMARIZEDEXPERIMENT OBJECT
+    $se->row_apply(sub { (my $name = $_->[1]) =~ s/[ra]/z/; $name });
+    # [ 'homez', 'bzrt', 'lisz' ];
+
+    $se->extract_col_by_idx(1);
+    # [ 'homer', 'bart', 'lisa' ];
+
+
+    # WITH MODIFYING THE SUMMARIZEDEXPERIMENT OBJECT
+    $se->row_apply(sub { $_->[1] =~ s/[ra]/z/; $_->[1] });
+    # [ 'homez', 'bzrt', 'lisz' ];
+
+    $se->extract_col_by_idx(1);
+    # [ 'homez', 'bzrt', 'lisz' ];
+
+
+
 =head2 row_idx
 =head2 row_idx_map
 =head2 row_idx_match
