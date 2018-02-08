@@ -23,6 +23,7 @@ our %EXPORT_TAGS = (
   'all' => [
     qw(
       ndjson_iterate ndjson_hash ndjson_slurp ndjson_spew
+      ndjson_freeze ndjson_thaw
       ythaw yfreeze yslurp yspew
       jthaw jfreeze jslurp jspew
       stoslurp stospew
@@ -104,6 +105,26 @@ sub stoslurp {
   my $data = fd_retrieve($fh);
   $fh->close unless $was_open;
   return $data;
+}
+
+sub ndjson_freeze {
+  my $entries = shift;
+  return unless (@$entries);
+  state $js = JSON::XS->new->utf8->allow_nonref;
+  return join( "\n", ( map { $js->encode_json($_) } @$entries ) ) . "\n";
+}
+
+sub ndjson_thaw {
+  my $data = shift;
+
+  return unless ($data);
+  my @entries = split /\n/, $data;
+
+  return unless (@entries);
+
+  state $js = JSON::XS->new->utf8->allow_nonref;
+
+  return [ map { $js->decode_json($_) } @entries ];
 }
 
 sub ndjson_hash {
