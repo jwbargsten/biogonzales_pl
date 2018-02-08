@@ -9,6 +9,7 @@ use Data::Dumper;
 use Bio::Gonzales::Matrix::IO;
 use File::Which qw/which/;
 use Bio::Gonzales::Seq::IO;
+use Bio::Gonzales::Seq;
 
 use base 'Exporter';
 our ( @EXPORT, @EXPORT_OK, %EXPORT_TAGS );
@@ -28,6 +29,7 @@ our ( @EXPORT, @EXPORT_OK, %EXPORT_TAGS );
   strand_convert
   seq_lengths
   seq_apply
+  revcom_seq_string
 );
 
 our %STRAND_CHAR_TABLE = (
@@ -84,6 +86,10 @@ sub seq_lengths {
   }
 
   return \%sl;
+}
+
+sub revcom_seq_string {
+  return Bio::Gonzales::Seq::_revcom_from_string(@_);
 }
 
 sub seq_apply {
