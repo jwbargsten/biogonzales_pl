@@ -111,7 +111,7 @@ sub ndjson_freeze {
   my $entries = shift;
   return unless (@$entries);
   state $js = JSON::XS->new->utf8->allow_nonref;
-  return join( "\n", ( map { $js->encode_json($_) } @$entries ) ) . "\n";
+  return join( "\n", ( map { $js->encode($_) } @$entries ) ) . "\n";
 }
 
 sub ndjson_thaw {
@@ -124,7 +124,7 @@ sub ndjson_thaw {
 
   state $js = JSON::XS->new->utf8->allow_nonref;
 
-  return [ map { $js->decode_json($_) } @entries ];
+  return [ map { $js->decode($_) } @entries ];
 }
 
 sub ndjson_hash {
