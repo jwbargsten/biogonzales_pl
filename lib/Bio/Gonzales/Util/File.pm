@@ -230,7 +230,7 @@ sub is_fh {
 
   return 1
     if ( $reftype
-    && ( $reftype eq 'IO' or $reftype eq 'GLOB' && *{$fh}{IO} or ( blessed $fh && $fh->isa("IO::Handle") ) )
+    && ( $reftype eq 'IO' or $reftype eq 'GLOB' && *{$fh}{IO} or ( Scalar::Util::blessed($fh) && $fh->isa("IO::Handle") ) )
     );
 
   return;
