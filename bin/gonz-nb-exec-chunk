@@ -1,0 +1,66 @@
+#!/usr/bin/env perl
+# created on 2018-02-09
+
+use warnings;
+use strict;
+use v5.11;
+use IO::Handle ();
+
+use File::Temp qw/tempfile tempdir/;
+
+my %alias = ( R => 'Rscript', );
+
+my $tmp_f = shift;
+die "no file" unless ($tmp_f);
+
+my $data = do { local $/; <DATA> };
+( undef, my @files ) = split /^@@\s*(.+?)\s*\r?\n/m, $data;
+my %boilerplate;
+while (@files) {
+  my ( $name, $content ) = splice @files, 0, 2;
+  chomp $content;
+  $boilerplate{$name} = [ split /\n/, $content ];
+}
+
+my @lines = <STDIN>;
+map { chomp; s/\r$//; } @lines;
+
+my $shebang = shift @lines;
+
+die unless ( $shebang =~ /^```\{(.+)\}$/ );
+my @bin = split /\s+/, $1;
+my $end = pop @lines;
+die unless ( $end =~ /^```$/ );
+
+my $boilerplate = $boilerplate{ $bin[0] } // [];
+@lines = ( "#!/usr/bin/env " . join( " ", @bin ), @$boilerplate, @lines );
+
+#my $tmp_f = "/tmp/test.script";
+open my $tmp_fh, '>', $tmp_f or die "Can't open filehandle: $!";
+#my ( $tmp_fh, $tmp_f ) = tempfile();
+binmode( $tmp_fh, ":utf8" );
+say $tmp_fh join( "\n", @lines );
+close $tmp_fh;
+
+chmod( 0700, $tmp_f );
+
+#system( '/usr/bin/env', @bin, $tmp_f ) == 0 or die "system failed: $?";
+
+__DATA__
+
+@@ perl
+use warnings;
+use strict;
+use v5.11;
+use IO::Handle ();
+
+
+@@ Rscript
+library(data.table)
+library(dplyr)
+library(rjson)
+library(reshape2)
+library(ggplot2)
+library(yaml)
+
+
