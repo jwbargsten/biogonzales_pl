@@ -126,7 +126,7 @@ sub sys_pipe {
 }
 
 sub sys_pipe_fatal {
-  my $cmd = 'set pipefail; ' . sys_fmt(@_);
+  my $cmd = 'set -o pipefail; ' . sys_fmt(@_);
   system($cmd) == 0 or croak "system " . join( " ", @_ ) . " FAILED: $? ## $!";
 }
 

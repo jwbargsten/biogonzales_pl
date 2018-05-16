@@ -52,7 +52,7 @@ sub contigs {
   for my $ctg (@$ctgs_raw) {
     $ctg =~ s/^<//;
     $ctg =~ s/>$//;
-    push @ctgs, { map { split /=/, $_, 2 } split /,/, $ctg };
+    push @ctgs, { map { split /=/, $_, 2 } split /\s*,\s*/, $ctg };
   }
   return \@ctgs;
 }
