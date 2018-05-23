@@ -13,14 +13,31 @@ use List::Util qw/max/;
 
 our $VERSION = 0.01_01;
 
-our %EXPORT_TAGS = ( 'all' => [qw/geno2haplo renumber_genotypes merge_alleles geno_get_gt_simple/ ] );
+our %EXPORT_TAGS = (
+  'all' => [
+    qw/
+      geno_count_gt
+      geno_hom_het_part
+      geno_is_poly
+      geno_major_alleles
+      geno_nhet
+      geno_nmissing
+      geno2haplo
+      renumber_genotypes
+      merge_alleles
+      geno_get_gt_simple
+      geno_get_gt
+      geno_nuniq/
+  ]
+);
+
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 
 sub geno2haplo {
   my $genotypes = shift;
-  my $ploidy = shift;
+  my $ploidy    = shift;
 
-  die "no ploidy defined for geno2haplo" unless(defined($ploidy));
+  die "no ploidy defined for geno2haplo" unless ( defined($ploidy) );
   # check if also coverage, etc. is part of the genotype then
   # split the genotypes into haplotypes
   my $phased = 1;
@@ -30,27 +47,27 @@ sub geno2haplo {
     # we need to find only one genotype of x/y to set phased to false
     $phased &&= not index( $g, '|' ) < 0;
     my @h = split /[|\/]/, $g;
-    @h = ('.')x$ploidy if(@h == 1 && $h[0] eq '.');
-    die "ploidy mismatch in geno2haplo" if(@h != $ploidy);
+    @h = ('.') x $ploidy if ( @h == 1 && $h[0] eq '.' );
+    die "ploidy mismatch in geno2haplo" if ( @h != $ploidy );
     push @haplotypes, @h;
   }
   return ( \@haplotypes, $phased );
 }
 
 sub renumber_genotypes {
-  my ( $map , $genotypes, ) = @_;
+  my ( $map, $genotypes, ) = @_;
   my @renumbered;
   for my $g_raw (@$genotypes) {
     my $idx = index( $g_raw, ':' );
     my $g = $idx >= 0 ? substr( $g_raw, 0, $idx ) : $g_raw;
     my @g_split = split /([|\/])/, $g;
     for ( my $i = 0; $i < @g_split; $i += 2 ) {
-      $g_split[$i] = $map->[ $g_split[$i] ] if($g_split[$i] ne '.');
+      $g_split[$i] = $map->[ $g_split[$i] ] if ( $g_split[$i] ne '.' );
     }
-    if($idx < 0) {
+    if ( $idx < 0 ) {
       $g_raw = join '', @g_split;
     } else {
-      substr( $g_raw, 0, $idx, join( '', @g_split));
+      substr( $g_raw, 0, $idx, join( '', @g_split ) );
     }
   }
   return $genotypes;
@@ -87,7 +104,7 @@ sub geno_get_gt {
   $gt_idx //= 0;
 
   my @gt;
-  $smp_idcs = [ 0 .. (@$gt -1 )] unless($smp_idcs);
+  $smp_idcs = [ 0 .. ( @$gt - 1 ) ] unless ($smp_idcs);
   for my $i (@$smp_idcs) {
     my $call = $gt->[$i];
 
@@ -123,19 +140,26 @@ sub geno_nhet {
 
 sub geno_is_poly {
   my $gt = shift;
-  my @valid_gt = grep { $_ ne '.' } @$gt;
+  my @valid_gt = grep { index( $_, '.' ) < 0 } @$gt;
   return 0 unless (@valid_gt);
   return uniq(@valid_gt) == 1 ? 0 : 1;
 }
 
-sub geno_split_hom_het {
+sub geno_nuniq {
+  my $gt = shift;
+  my @valid_gt = grep { index( $_, '.' ) < 0 } @$gt;
+  return 0 unless (@valid_gt);
+  return scalar uniq(@valid_gt);
+}
+
+sub geno_hom_het_part {
   my $gt = shift;
   my @hom;
   my @het;
   my $nmissing = 0;
 
   for my $g (@$gt) {
-    if ( $g eq '.' ) {
+    if ( index( $g, '.' ) >= 0 ) {
       $nmissing++;
       next;
     }
@@ -151,17 +175,16 @@ sub geno_split_hom_het {
 
 sub geno_nmissing {
   my $gt = shift;
-  return scalar grep { $_ eq '.' } @$gt;
+  return scalar grep { index( $_, '.' ) >= 0 } @$gt;
 }
 
 sub geno_major_alleles {
   my $cnt = shift;
 
-  my @valid         = grep { $_ ne '.' } keys %$cnt;
+  my @valid         = grep { index( $_, '.' ) < 0 } keys %$cnt;
   my $cnt_major     = max @{$cnt}{@valid};
-  my @major_alleles = grep { $cnt->{$_} == $cnt_major && $_ ne '.' } @valid;
+  my @major_alleles = grep { $cnt->{$_} == $cnt_major && index( $_, '.' ) < 0 } @valid;
   return \@major_alleles;
 }
-
 
 1;

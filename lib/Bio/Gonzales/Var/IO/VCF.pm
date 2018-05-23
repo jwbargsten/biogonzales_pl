@@ -137,7 +137,7 @@ sub next_var {
 
   my $l;
   while ( defined( $l = $fhi->() ) ) {
-    if ( $l =~ /^\#/ || $l =~ /^\s*$/ ) {
+    if ( length($l) < 1 || substr($l, 0, 1) eq '#' || $l =~ /^\s+$/ ) {
       next;
     } else {
       last;
@@ -145,12 +145,23 @@ sub next_var {
   }
   return unless $l;
 
-  my ( $chr, $pos, $id, $ref, $alt, $qual, $filter, $info, $format, @variants ) = split /\t/, $l;
+#[0] $chr
+#[1] $pos
+#[2] $id
+#[3] $ref
+#[4] $alt
+#[5] $qual
+#[6] $filter
+#[7] $info
+#[8] $format
+#[9] @variants
+
+  my ( $chr, $pos, $id, $ref, $alt, $qual, $filter, $info, $format, @variants ) = split '\t', $l;
   return {
     seq_id    => $chr,
     pos       => $pos + 0,
     var_id    => $id,
-    alleles   => [ $ref, split( /,/, $alt ) ],
+    alleles   => [ $ref, split( ',', $alt ) ],
     qual      => $qual,
     filter    => $filter,
     info      => $info,

@@ -41,7 +41,7 @@ sub _build__fhi {
     while (1) {
       my $l = <$fh>;
       if ( defined($l) ) {
-        $l =~ s/\r\n/\n/;
+        $l =~ y/\r//d;
         chomp $l;
       } else {
         return;
