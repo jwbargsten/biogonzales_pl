@@ -16,6 +16,8 @@ our $VERSION = 0.01_01;
 our %EXPORT_TAGS = (
   'all' => [
     qw/
+      get_allele_obs
+      parse_format
       geno_count_gt
       geno_hom_het_part
       geno_is_poly
@@ -27,11 +29,34 @@ our %EXPORT_TAGS = (
       merge_alleles
       geno_get_gt_simple
       geno_get_gt
+      geno_get_field
       geno_nuniq/
   ]
 );
 
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
+
+sub get_allele_obs {
+  my $fmt  = shift;
+  my $call = shift;
+
+  my @call   = split /:/, $call;
+  my $ad_idx = $fmt->{'AD'};
+  my $ao_idx = $fmt->{'AO'};
+  my $ro_idx = $fmt->{'RO'};
+
+  if ( defined($ad_idx) ) {
+
+    my @dp = split /,/, $call[$ad_idx];
+    return \@dp;
+  } elsif ( defined($ao_idx) && defined($ro_idx) ) {
+    my @dp = ( $call[$ro_idx], split( /,/, $call[$ao_idx] ) );
+    return \@dp;
+
+  } else {
+    return;
+  }
+}
 
 sub geno2haplo {
   my $genotypes = shift;
@@ -99,12 +124,26 @@ sub geno_get_gt_simple {
   return \@res;
 }
 
+sub geno_get_field {
+  my ( $gt, $smp_idcs, $field_idx ) = @_;
+
+  my @gt;
+  $smp_idcs = [ 0 .. ( @$gt - 1 ) ] unless ($smp_idcs && @$smp_idcs);
+  for my $i (@$smp_idcs) {
+    my $call = $gt->[$i];
+
+    my @fields = split /:/, $call;
+      push @gt, $fields[$field_idx];
+  }
+  return \@gt;
+}
+
 sub geno_get_gt {
   my ( $gt, $smp_idcs, $gt_idx ) = @_;
   $gt_idx //= 0;
 
   my @gt;
-  $smp_idcs = [ 0 .. ( @$gt - 1 ) ] unless ($smp_idcs);
+  $smp_idcs = [ 0 .. ( @$gt - 1 ) ] unless ($smp_idcs && @$smp_idcs);
   for my $i (@$smp_idcs) {
     my $call = $gt->[$i];
 
@@ -171,6 +210,14 @@ sub geno_hom_het_part {
     }
   }
   return ( \@hom, \@het, $nmissing );
+}
+
+sub parse_format {
+  my $v = shift;
+
+  my $idx = 0;
+  my %format = map { $_ => $idx++ } split /:/, $v->{format};
+  return \%format;
 }
 
 sub geno_nmissing {
