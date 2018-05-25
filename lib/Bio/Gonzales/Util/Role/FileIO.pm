@@ -41,7 +41,10 @@ sub _build__fhi {
     while (1) {
       my $l = <$fh>;
       if ( defined($l) ) {
-        $l =~ y/\r//d;
+        # handle DOS format
+        #$l =~ s/\r\n$/\n/;
+        # this is 2x as fast
+        substr( $l, -2, 1, '' ) if ( substr( $l, -2, 1 ) eq "\r" );
         chomp $l;
       } else {
         return;
