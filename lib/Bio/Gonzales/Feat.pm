@@ -116,8 +116,8 @@ sub to_gff3 {
   }
 
   return join( "\t",
-    $self->seq_id, $self->source, $self->type,
-    $self->start,  $self->end,    $self->score // '.',
+    $self->seq_id, $self->source // '.', $self->type,
+    $self->start, $self->end, $self->score // '.',
     $strand, $self->phase // '.', join( ';', @groups ) )
     . "\n";
 }

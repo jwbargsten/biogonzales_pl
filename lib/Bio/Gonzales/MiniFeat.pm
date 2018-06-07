@@ -13,7 +13,8 @@ our $QUIET_MODE;
 
 # VERSION
 
-has [qw/source type/] => ( is => 'rw', required => 1 );
+has type => ( is => 'rw', required => 1 );
+has source => ( is => 'rw' );
 
 has attributes => ( is => 'rw', default => sub { {} } );
 
@@ -71,13 +72,13 @@ sub attr_first { return shift->first_attr(@_); }
 
 sub id { return shift->_attr_single( { name => 'ID' } ); }
 
-sub ids { return shift->_attr_list('ID', @_); }
+sub ids { return shift->_attr_list( 'ID', @_ ); }
 
 sub attr_list { return shift->_attr_list(shift); }
 
 sub name { return shift->_attr_single( { name => 'Name' } ); }
 
-sub parent_ids { return shift->_attr_list('Parent', @_); }
+sub parent_ids { return shift->_attr_list( 'Parent', @_ ); }
 
 sub parent_id { return shift->_attr_single( { name => 'Parent' } ); }
 
@@ -86,8 +87,8 @@ sub attr_replace { return shift->replace_attr(@_) }
 sub replace_attr {
   my ( $self, $name, @values ) = @_;
 
-  confess "name cannot be a reference" if(ref $name);
-  return $self->_attr_list($name, \@values);
+  confess "name cannot be a reference" if ( ref $name );
+  return $self->_attr_list( $name, @values );
 }
 
 sub parents {

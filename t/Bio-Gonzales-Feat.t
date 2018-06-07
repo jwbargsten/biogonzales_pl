@@ -49,6 +49,26 @@ isnt( exception { $f1->recurse_subfeats }, undef, "recursion died successfully" 
   is_deeply( $f3->attr->{ID}, [qw/g h i/] );
   is_deeply( scalar $f3->replace_attr( 'ID', [qw/j k l/] ), [ 'g', 'h', 'i' ] );
 }
+{
+  my $f3 = Bio::Gonzales::Feat->new(
+    seq_id     => 'a',
+    type       => 'exon',
+    start      => 0,
+    end        => 1,
+    strand     => -1,
+    attributes => { ID => [ 'a', 'b', 'c' ] }
+  );
+  is( $f3->attr_first("ID"), 'a' );
+  is( $f3->id,               'a' );
+  is_deeply( scalar $f3->ids, [ 'a', 'b', 'c' ] );
+  is_deeply( [ $f3->ids ], [ 'a', 'b', 'c' ] );
+  is_deeply( $f3->attr->{ID}, [qw/a b c/] );
+  is_deeply( [ $f3->ids( [qw/d e f/] ) ], [ 'a', 'b', 'c' ] );
+  is_deeply( scalar $f3->ids( [qw/g h i/] ), [ 'd', 'e', 'f' ] );
+  is_deeply( $f3->attr->{ID}, [qw/g h i/] );
+  is_deeply( scalar $f3->replace_attr( 'ID', [qw/j k l/] ), [ 'g', 'h', 'i' ] );
+  is($f3->to_gff3, "a\t.\texon\t0\t1\t.\t-\t.\tID=j,k,l\n");
+}
 
 done_testing();
 
