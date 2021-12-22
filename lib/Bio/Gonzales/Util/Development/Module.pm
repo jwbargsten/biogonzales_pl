@@ -2,6 +2,9 @@
 #Copyright (c) 2010 Joachim Bargsten <code at bargsten dot org>. All rights reserved.
 
 package Bio::Gonzales::Util::Development::Module;
+
+use strict;
+use warnings;
 use Carp;
 
 use File::Spec;
