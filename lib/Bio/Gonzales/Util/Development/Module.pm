@@ -1,4 +1,3 @@
-#!/usr/bin/env perl
 #Copyright (c) 2010 Joachim Bargsten <code at bargsten dot org>. All rights reserved.
 
 package Bio::Gonzales::Util::Development::Module;
