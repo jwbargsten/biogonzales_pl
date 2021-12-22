@@ -128,6 +128,7 @@ Bio::Gonzales::Assembly::IO - assembly related stuff
 =head1 OPTIONS
 
 =head1 SUBROUTINES
+
 =head1 METHODS
 
 =head1 SEE ALSO
