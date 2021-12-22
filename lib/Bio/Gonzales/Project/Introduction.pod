@@ -196,7 +196,7 @@ changed:
 
 The configuration is stored in C<gonz.conf.yml> and accessible via commandline
 and perl functions. The format of the configuration is
-L<YAML|http://www.yaml.org>. You can therefore freely store any configuration
+L<YAML|https://yaml.org/>. You can therefore freely store any configuration
 in various data formats, such as lists or dictionaries.
 
 =head3 Access via commandline
