@@ -167,8 +167,6 @@ Script C<bin/calc_number_of_avg_leaves.pl>
     
     close $result_fh;
  
-=back
-
 =item Via an exported variable of L<Bio::Gonzales::Project::Functions>, B<< $ANALYSIS_VERSION >>
 
 The script changes slightly, see here the changed lines:
@@ -192,6 +190,8 @@ changed:
     # here the result file will be e.g. "2014-01-28/avg_num_leaves.tsv", depending on the analysis version
     my $result_file = "$ANALYSIS_VERSION/avg_num_leaves.tsv";  # CHANGED
     
+=back
+
 =head2 Configuration
 
 The configuration is stored in C<gonz.conf.yml> and accessible via commandline

@@ -892,7 +892,7 @@ A alias for assay.
 
 =head2 aggregate
 
-=head2 C<< $se = $se->aggregate_by_idcs(\@idcs, sub { ... }, \@col_names)
+=head2 C<< $se = $se->aggregate_by_idcs(\@idcs, sub { ... }, \@col_names) >>
 
 The callback gets passed the grouping keys, rows and row indices. C<$_> is set to the
 group has that comes from the (internally used) C<< $se->group >> function.
@@ -902,7 +902,7 @@ group has that comes from the (internally used) C<< $se->group >> function.
       my $group = $_;
     }
 
-=head2 C<< $se = $se->aggregate_by_names(\@names, sub { ... }, \@col_names)
+=head2 C<< $se = $se->aggregate_by_names(\@names, sub { ... }, \@col_names) >>
 
 =head2 apply
 
