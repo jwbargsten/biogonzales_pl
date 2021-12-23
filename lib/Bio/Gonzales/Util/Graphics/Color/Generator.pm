@@ -28,6 +28,7 @@ Bio::Gonzales::Util::Common::Visual::Color::Generator - generate distinguishable
     }
 
 =head1 SUBROUTINES/METHODS
+
 =cut
 
 has _patterns => (

@@ -192,6 +192,7 @@ Bio::Gonzales::Var::IO::VCF - parse VCF files
 =head1 OPTIONS
 
 =head1 SUBROUTINES
+
 =head1 METHODS
 
 =head1 SEE ALSO

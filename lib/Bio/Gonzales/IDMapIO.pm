@@ -9,7 +9,7 @@ use Carp;
 use 5.010;
 
 use parent qw/Bio::Root::Root/;
-use YAML qw/freeze thaw/;
+use YAML::XS qw/freeze thaw/;
 use Data::Dumper;
 # VERSION
 

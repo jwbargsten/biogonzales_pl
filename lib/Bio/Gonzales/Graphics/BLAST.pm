@@ -6,7 +6,6 @@ use Carp;
 
 use 5.010;
 
-use Log::Log4perl qw(:easy);
 use Bio::Graphics;
 use Bio::SearchIO;
 use Bio::SeqFeature::Generic;
