@@ -16,7 +16,7 @@ use Algorithm::Loops qw/MapCarU/;
 use Bio::Gonzales::Matrix::Util;
 
 use Data::Dumper;
-use JSON::XS;
+use Cpanel::JSON::XS;
 
 use Clone;
 
@@ -242,7 +242,7 @@ sub as_hash {
 
 sub encode_as_json {
   my $self = shift;
-  my $js   = JSON::XS->new->utf8->allow_nonref->indent(1);    #->canonical(1);
+  my $js   = Cpanel::JSON::XS->new->utf8->allow_nonref->indent(1);    #->canonical(1);
   return $js->encode( $self->as_hash );
 }
 

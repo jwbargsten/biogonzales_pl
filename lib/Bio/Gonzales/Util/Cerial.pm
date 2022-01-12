@@ -13,7 +13,7 @@ use Bio::Gonzales::Util qw/deep_value flatten/;
 
 use Try::Tiny;
 use YAML::XS;
-use JSON::XS;
+use Cpanel::JSON::XS;
 use Data::Dumper;
 use Storable qw/nstore_fd fd_retrieve/;
 
@@ -27,35 +27,33 @@ our %EXPORT_TAGS = (
       ythaw yfreeze yslurp yspew
       jthaw jfreeze jslurp jspew
       stoslurp stospew
-      )
+    )
   ],
   std => [
     qw(
       ythaw yfreeze yslurp yspew
       jthaw jfreeze jslurp jspew
       stoslurp stospew
-      )
+    )
   ]
 );
-our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
-our @EXPORT    = ( @{ $EXPORT_TAGS{'std'} } );
+our @EXPORT_OK = (@{ $EXPORT_TAGS{'all'} });
+our @EXPORT    = (@{ $EXPORT_TAGS{'std'} });
 
 BEGIN {
   *yfreeze = \&YAML::XS::Dump;
   *ythaw   = \&YAML::XS::Load;
-  #*jfreeze = \&JSON::XS::encode_json;
-  *jthaw = \&JSON::XS::decode_json;
+  *jthaw   = \&Cpanel::JSON::XS::decode_json;
 }
 
-our $JSON = JSON::XS->new->indent(1)->utf8->allow_nonref;
+our $JSON = Cpanel::JSON::XS->new->indent(1)->utf8->allow_nonref;
 
 sub jfreeze {
   my $r;
   my @d = @_;
   try {
     $r = $JSON->encode(@d);
-  }
-  catch {
+  } catch {
     confess Dumper \@d;
   };
 
@@ -65,8 +63,8 @@ sub _spew {
   my $dest = shift;
   my $data = shift;
 
-  my ( $fh, $was_open ) = open_on_demand( $dest, '>' );
-  binmode $fh, ':utf8' unless ( ref $fh eq 'IO::Zlib' );
+  my ($fh, $was_open) = open_on_demand($dest, '>');
+  binmode $fh, ':utf8' unless (ref $fh eq 'IO::Zlib');
   local $/ = "\n";
 
   print $fh $data;
@@ -75,9 +73,13 @@ sub _spew {
 
 sub _slurp {
   my $src = shift;
-  my ( $fh, $was_open ) = open_on_demand( $src, '<' );
-  binmode $fh, ':utf8' unless ( ref $fh eq 'IO::Zlib' );
-  local $/ = "\n";
+  my $c   = shift;
+  my ($fh, $was_open) = open_on_demand($src, '<');
+
+  my $io_layer = $c->{io_layer};
+  $io_layer = ':utf8' if (!$io_layer && $c->{utf8_layer});
+
+  binmode $fh, $c->{io_layer} if ($io_layer);
 
   my $data = do { local $/; <$fh> };
 
@@ -85,23 +87,23 @@ sub _slurp {
   return $data;
 }
 
-sub yslurp { return ythaw( _slurp(shift) ) }
-sub jslurp { return jthaw( _slurp(shift) ) }
-sub yspew  { my $file = shift; _spew( $file, yfreeze( $_[0] ) ) }
-sub jspew  { my $file = shift; _spew( $file, jfreeze( $_[0] ) ) }
+sub yslurp { return ythaw(_slurp(shift, shift)) }
+sub jslurp { return jthaw(_slurp(shift, shift)) }
+sub yspew  { my $file = shift; _spew($file, yfreeze($_[0])) }
+sub jspew  { my $file = shift; _spew($file, jfreeze($_[0])) }
 
 sub stospew {
   my $dest = shift;
   my $data = shift;
 
-  my ( $fh, $was_open ) = open_on_demand( $dest, '>' );
-  nstore_fd( $data, $fh );
+  my ($fh, $was_open) = open_on_demand($dest, '>');
+  nstore_fd($data, $fh);
   $fh->close unless ($was_open);
 }
 
 sub stoslurp {
   my $src = shift;
-  my ( $fh, $was_open ) = open_on_demand( $src, '<' );
+  my ($fh, $was_open) = open_on_demand($src, '<');
   my $data = fd_retrieve($fh);
   $fh->close unless $was_open;
   return $data;
@@ -110,8 +112,8 @@ sub stoslurp {
 sub ndjson_freeze {
   my $entries = shift;
   return unless (@$entries);
-  state $js = JSON::XS->new->utf8->allow_nonref;
-  return join( "\n", ( map { $js->encode($_) } @$entries ) ) . "\n";
+  state $js = Cpanel::JSON::XS->new->utf8->allow_nonref;
+  return join("\n", (map { $js->encode($_) } @$entries)) . "\n";
 }
 
 sub ndjson_thaw {
@@ -122,7 +124,7 @@ sub ndjson_thaw {
 
   return unless (@entries);
 
-  state $js = JSON::XS->new->utf8->allow_nonref;
+  state $js = Cpanel::JSON::XS->new->utf8->allow_nonref;
 
   return [ map { $js->decode($_) } @entries ];
 }
@@ -134,10 +136,10 @@ sub ndjson_hash {
 
   my %res;
   my $it = ndjson_iterate($files);
-  while ( my $elem = $it->() ) {
-    my $val = deep_value( $elem, $keys );
-    if ( $cfg->{uniq} ) {
-      die $val . " already exists" if ( $res{$val} );
+  while (my $elem = $it->()) {
+    my $val = deep_value($elem, $keys);
+    if ($cfg->{uniq}) {
+      die $val . " already exists" if ($res{$val});
       $res{$val} = $elem;
     } else {
       $res{$val} //= [];
@@ -151,25 +153,24 @@ sub ndjson_slurp {
   my $it = ndjson_iterate(@_);
 
   my @res;
-  while ( defined( my $elem = $it->() ) ) {
+  while (defined(my $elem = $it->())) {
     push @res, $elem;
   }
   return \@res;
 }
 
 sub ndjson_spew {
-  my ( $dest, $elems, $c ) = @_;
+  my ($dest, $elems, $c) = @_;
 
-  my $js = JSON::XS->new->utf8->allow_nonref;
-  $js = $js->canonical(1) if ( $c->{canonical} );
-  my ( $fh, $fh_was_open ) = open_on_demand( $dest, '>' );
+  my $js = Cpanel::JSON::XS->new->utf8->allow_nonref;
+  $js = $js->canonical(1) if ($c->{canonical});
+  my ($fh, $fh_was_open) = open_on_demand($dest, '>');
 
   try {
     for my $elem (@$elems) {
       say $fh $js->encode($elem);
     }
-  }
-  catch {
+  } catch {
     confess "could not spew: $_";
   };
 
@@ -181,17 +182,16 @@ sub ndjson_iterate {
   my @srcs = flatten(@_);
 
   my $i = 0;
-  my ( $fh, $fh_was_open ) = open_on_demand( $srcs[$i], '<' );
+  my ($fh, $fh_was_open) = open_on_demand($srcs[$i], '<');
 
   return sub {
-    while ( $i < @srcs ) {
-      while ( my $record = <$fh> ) {
-        next if ( !$record || $record =~ /^\s*$/ );
+    while ($i < @srcs) {
+      while (my $record = <$fh>) {
+        next if (!$record || $record =~ /^\s*$/);
         my $data;
         try {
           $data = decode_json($record);
-        }
-        catch {
+        } catch {
           warn "caught error: $_ JSON string >$record<";
         };
         confess "no valid data in record" unless ($data);
@@ -200,13 +200,13 @@ sub ndjson_iterate {
       }
 
       $fh->close unless ($fh_was_open);
-      if ( ++$i >= @srcs ) {
+      if (++$i >= @srcs) {
         # return if next file does not exist
         return;
       }
 
       # open next file
-      ( $fh, $fh_was_open ) = open_on_demand( $srcs[$i], '<' );
+      ($fh, $fh_was_open) = open_on_demand($srcs[$i], '<');
     }
     return;
   };

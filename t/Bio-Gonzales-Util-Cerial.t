@@ -2,8 +2,9 @@ use warnings;
 use Test::More;
 use Data::Dumper;
 use YAML::XS qw/LoadFile DumpFile/;
-use JSON::XS;
+use Cpanel::JSON::XS;
 use File::Temp qw/tempfile/;
+use utf8;
 
 BEGIN { use_ok( 'Bio::Gonzales::Util::Cerial', 'yspew', 'yslurp', 'jspew', 'jslurp' ); }
 

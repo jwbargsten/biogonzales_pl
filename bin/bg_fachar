@@ -12,9 +12,9 @@ use 5.010;
 use Bio::Gonzales::Util::Text qw/ccount_iter/;
 
 use Bio::Gonzales::Seq::IO qw/faiterate/;
-use JSON::XS;
+use Cpanel::JSON::XS;
 use List::Util qw/sum/;
-my $js = JSON::XS->new->utf8->allow_nonref->canonical(1);
+my $js = Cpanel::JSON::XS->new->utf8->allow_nonref->canonical(1);
 
 use Getopt::Long::Descriptive;
 use Thread::Task::Concurrent qw(tmsg);
