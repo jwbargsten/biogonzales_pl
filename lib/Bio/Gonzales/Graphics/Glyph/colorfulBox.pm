@@ -2,6 +2,7 @@ package Bio::Gonzales::Graphics::Glyph::colorfulBox;
 # DAS-compatible package to use for drawing a box
 
 use strict;
+use warnings;
 use base qw(Bio::Graphics::Glyph::generic);
 
 # VERSION

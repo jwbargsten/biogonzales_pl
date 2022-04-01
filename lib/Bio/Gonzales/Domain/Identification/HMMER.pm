@@ -381,6 +381,7 @@ sub _create_standard_domain_groups {
 __END__
 
 =head1 SEE ALSO
+
 =head1 AUTHOR
 
 jw bargsten, C<< <joachim.bargsten at wur.nl> >>

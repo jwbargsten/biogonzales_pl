@@ -239,6 +239,10 @@ Bio::Gonzales::Util::Cerial - convenience functions for yaml and json IO
 
 
 =head1 DESCRIPTION
+
+=head1 SUBROUTINES
+
+=over 4
     
 =item B<< $yaml_string = yfreeze(\%data) >>
 
@@ -271,6 +275,8 @@ Serialize data structure as json string to a file
 =item B<< my $data = jslurp($filename) >>
 
 UNserialize data structure from json file
+
+=back
 
 =head1 EXPORT
 

@@ -892,7 +892,7 @@ A alias for assay.
 
 =head2 aggregate
 
-=head2 C<< $se = $se->aggregate_by_idcs(\@idcs, sub { ... }, \@col_names)
+=head2 C<< $se = $se->aggregate_by_idcs(\@idcs, sub { ... }, \@col_names) >>
 
 The callback gets passed the grouping keys, rows and row indices. C<$_> is set to the
 group has that comes from the (internally used) C<< $se->group >> function.
@@ -902,7 +902,7 @@ group has that comes from the (internally used) C<< $se->group >> function.
       my $group = $_;
     }
 
-=head2 C<< $se = $se->aggregate_by_names(\@names, sub { ... }, \@col_names)
+=head2 C<< $se = $se->aggregate_by_names(\@names, sub { ... }, \@col_names) >>
 
 =head2 apply
 
@@ -948,14 +948,23 @@ sensitve and returns a hash in list context and a hash reference in scalar conte
 =head2 has_col_data
 
 =head2 has_col_names
+
 =head2 has_row_data
+
 =head2 has_row_names
+
 =head2 header
+
 =head2 header_idx
+
 =head2 header_idx_match
+
 =head2 inconsistencies
+
 =head2 json_spew
+
 =head2 make_consistent
+
 =head2 merge
 
 Merge two SummarizedExperiment objects.
@@ -980,9 +989,13 @@ Merge two SummarizedExperiment objects.
     # Lisa is missing, because the $se_y lacks weight information.
 
 =head2 names_to_idcs
+
 =head2 ncol
+
 =head2 nrow
+
 =head2 rbind
+
 =head2 row_apply
 
 Apply a callback to each row. C<$se->row_apply(@args)> is equivalent to C<$se->apply(1, @args)>
@@ -1012,8 +1025,11 @@ Apply a callback to each row. C<$se->row_apply(@args)> is equivalent to C<$se->a
 
 
 =head2 row_idx
+
 =head2 row_idx_map
+
 =head2 row_idx_match
+
 =head2 shuffle
 
 =head2 slice_by_idcs
@@ -1033,10 +1049,15 @@ Extract a column-"slice" from the summarized experiment. The indices select the 
 Create a new summarized experiment from matrix/tabular data.
 
 =head2 sort
+
 =head2 spew_assay
+
 =head2 subset
+
 =head2 encode_as_json
+
 =head2 transpose
+
 =head2 uniq
 
 =head1 LIMITATIONS

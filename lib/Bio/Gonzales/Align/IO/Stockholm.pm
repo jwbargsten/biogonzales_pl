@@ -124,6 +124,7 @@ Bio::Gonzales::Align::IO::Stockholm - IO class for the stockholm format
 =head1 OPTIONS
 
 =head1 SUBROUTINES
+
 =head1 METHODS
 
 =head1 SEE ALSO
