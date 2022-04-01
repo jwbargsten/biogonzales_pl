@@ -46,7 +46,7 @@ The main branches are grouped into
 
 =item Working with genomic features (representation, grouping, GFF3 input/output)
 
-=item Workgin with sequences (FASTA input/output, basic sequence manipulation and cleaning)
+=item Workgni with sequences (FASTA input/output, basic sequence manipulation and cleaning)
 
 =item Multiple sequence alignment input/output
 
