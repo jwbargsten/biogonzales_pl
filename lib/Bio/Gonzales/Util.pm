@@ -7,6 +7,7 @@ use strict;
 use Carp;
 
 use String::ShellQuote;
+use IO::Prompt::Tiny qw/prompt/;
 
 use base 'Exporter';
 our ( @EXPORT, @EXPORT_OK, %EXPORT_TAGS );
@@ -15,7 +16,7 @@ our ( @EXPORT, @EXPORT_OK, %EXPORT_TAGS );
 @EXPORT      = qw();
 %EXPORT_TAGS = ();
 @EXPORT_OK
-  = qw(undef_slice slice invslice flatten hash_merge as_arrayref sys_pipe sys_fmt sys_pipe_fatal deep_value);
+  = qw(undef_slice slice invslice flatten hash_merge as_arrayref sys_pipe sys_fmt sys_pipe_fatal deep_value ask);
 
 sub slice {
   my ( $hr, @k ) = @_;
@@ -129,6 +130,13 @@ sub sys_pipe_fatal {
   my $cmd = 'set -o pipefail; ' . sys_fmt(@_);
   system($cmd) == 0 or croak "system " . join( " ", @_ ) . " FAILED: $? ## $!";
 }
+
+sub ask {
+  my $question    = shift;
+  my $answer = prompt("$question (y/n)", "n");
+  return $answer =~ /^y/i;
+}
+
 
 sub deep_value {
   my ( $data, $keys ) = ( shift, shift );
