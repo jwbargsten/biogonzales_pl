@@ -57,7 +57,7 @@ sub gonzl   { confess "deprecated call syntax, use gonzl->info"   if (@_ > 0 && 
 
 sub gonzsys {
   _bgp->log->info("(exec) " . join(" ", @_));
-  system(@_) == 0 or confess "system failed: $?";
+  system(@_) == 0 or _bgp->log->fatal_confess("system failed: $?");
 }
 
 *gsx = \&gonzsys;
@@ -132,7 +132,26 @@ Bio::Gonzales::AV - analysis project utils
 
 =head1 SYNOPSIS
 
-    use Bio::Gonzales::AV qw(catfile nfi $ANALYSIS_VERSION iof path_to analysis_path msg error debug);
+    use Bio::Gonzales::AV
+      qw(
+        catfile
+        nfi
+        analysis_version
+        path_to
+        analysis_path
+        gonzlog
+        gonzconf
+        iof
+        gonzc
+        gonzl
+        gonz_iterate
+        gonzsys
+        analysis_name
+        gsx
+        gonzsys_pipe
+        gsxp
+        yes_or_die
+      );
 
 =head1 SUBROUTINES
 
