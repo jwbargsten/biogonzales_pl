@@ -58,7 +58,7 @@ Thus, the basic layout is of an C<example> project is:
 
     example/paper/    (the paper draft goes in here)
 
-    example/doc/      (3rd-party documentation)
+    example/docs/     (3rd-party documentation)
 
     example/lib/      (if some scripts or analyses have a lot in common,
                        creating a module/library might be helpful)
