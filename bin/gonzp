@@ -133,7 +133,8 @@ ifndef ANALYSIS_VERSION
 endif
 
 $(info analysis version: $(ANALYSIS_VERSION))
-export ANALYSIS_VERSION
+# optional
+#export ANALYSIS_VERSION
 
 AV=$(ANALYSIS_VERSION)
 NAME=$(lastword $(subst /, ,$(abspath .)))
